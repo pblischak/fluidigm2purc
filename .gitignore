@@ -1,0 +1,5 @@
+deps
+*.pyc
+.DS_Store
+*~
+.*~
