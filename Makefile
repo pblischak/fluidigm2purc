@@ -1,4 +1,4 @@
-.PHONY : deps clean
+.PHONY : deps clean install
 
 deps :
 	@# Make dependencies directory
@@ -24,6 +24,9 @@ deps :
 	@printf "\n**** Compiling sickle ****\n\n"
 	@cd deps/sickle_dir; make; mv sickle ..
 	@rm -rf deps/sickle_dir
+
+install :
+	@cp deps/sickle deps/pear fluidigm2purc /usr/local/bin
 
 clean :
 	@rm -rf deps
