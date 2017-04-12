@@ -1,90 +1,139 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # fluidigm2purc
 # Written by PD Blischak
 
 from __future__ import print_function
-import subprocess
+import subprocess as sps
 import os
 import sys
 import argparse
 import gzip
 import itertools
 
+#### header and version info. ##################################################
+
 __version__ = "This is fluidigm2purc v0.1.0-alpha (April 2017)."
 
-def read_fastq(_prefix, ):
-    """
-    Function for reading in and parsing paired-end FASTQ files.
-    """
+__header__ = """
+**********************************************
+fluidigm2purc (v0.1.0-alpha)
 
+Processing of paired-end FASTQ data from the
+Fluidigm platform for input to PURC.
+**********************************************
+"""
+
+#### functions to run executables, process FASTQs. #############################
 
 def run_sickle():
     """
-    Runs the program sickle to trim and filters reads.
+    Runs the program Sickle to trim and filters reads.
 
     Sickle:
-
+    Joshi NA, Fass JN. (2011). Sickle: A sliding-window, adaptive, quality-based
+    trimming tool for FastQ files (Version 1.33) [Software].
+    Available at https://github.com/najoshi/sickle.
     """
-    print("\n**** 1. Trimming and filtering paired-end reads with sickle ****\n\n")
+    print("\n**** Trimming and filtering paired-end reads with sickle ****\n\n")
 
+    sickle_cmd = [
+        "./deps/sickle",
+        ""
+    ]
 
-def run_flash2():
+    proc = sps.Popen(sickle_cmd, stdin=sps.PIPE, stdout=sps.PIPE, close_fds=True)
+
+def run_pear(prefix, outname, quality, threads):
     """
-    Run the program flash2 to merge paired-end reads.
-
-    FLASH2:
-
-    """
-    print("\n**** 2. Merging reads using flash2 ****\n\n")
-
-def run_pear():
-    """
-    Run the program pear to merge paired-end reads.
+    Run the program PEAR to merge paired-end reads. Performs read trimming
+    so we don't need to do this ahead of time, but can do it using sickle
+    if you want.
 
     PEAR:
+    J. Zhang, K. Kobert, T. Flouri, A. Stamatakis. PEAR: A fast and accurate
+    Illumina Paired-End reAd mergeR. Bioinformatics 30(5): 614-620, 2014.
     """
-    print("\n**** 2. Merging reads using pear ****\n\n")
+    print("\n**** Merging reads using PEAR ****\n\n")
+
+    pear_cmd = [
+        "./deps/pear",
+        "-f", prefix + "_R1.fastq.gz",
+        "-r", prefix + "_R2.fastq.gz",
+        "-o", outname,
+        "-q", str(quality),
+        "-j", str(threads),
+        "-k"
+    ]
+
+def PURCify_fastq(prefix):
+    """
+    Function for reading in FASTQ files and converting to PURC-style FASTA.
+    Uses taxon and locus names in the FASTQ sequence headers.
+    """
+
+
+#### some utility functions. ###################################################
 
 def raise_error(error_message, bad_arg):
-    print("\n** ", error_message, " **\n", sep='')
+    """
+    Prints error message and exits program.
+    """
+    print("\n** ERROR: ", error_message, " **\n", sep='')
     print("  => Option provided: ", bad_arg, "\n", sep='')
-    #sys.exit()
-    quit()
+    sys.exit(-1)
+
+def progressbar():
+    """
+    Prints a progress bar as data are processed.
+
+    Got the idea and code from ipyrad -- assemble/util.py.
+    (Eaton and Overcast; https://github.com/dereneaton/ipyrad)
+    """
+
+def write_PURC_config():
+    """
+    Writes skeleton of PURC config file.
+    """
+#### main functions. ###########################################################
 
 def main():
     """
+    Main function for fluidigm2purc.
 
+    It parses command line arguments and runs two or three steps:
+        1. Optional paired end trimming and filtering of reads using Sickle.
+        2. Read merging (and optional trimming) using PEAR.
+        3. Converting merged FASTQ files to fasta with modified sequence headers.
     """
     parser = argparse.ArgumentParser(description="Options for fluidigm2purc",
                                      add_help=True)
     parser.add_argument('-v', '--version', action="version",
                         version=__version__)
+
     required = parser.add_argument_group("required arguments")
     required.add_argument('-p', '--prefix', action="store", required=True,
                           metavar='\b', help="prefix for paired-end FASTQ files")
-    required.add_argument('-m', '--merger', action="store", required=True, type=str,
-                          metavar='\b', help="program for merging pair-end reads (flash2 or pear)")
+
     additional = parser.add_argument_group("additional arguments")
-    additional.add_argument('-o', '--outname', action="store", type=str, default="output.fasta",
-                            metavar='\b', help="name for output fasta file")
+    additional.add_argument('-o', '--outname', action="store", type=str, default="output",
+                            metavar='\b', help="base name for output fasta file [output]")
+    additional.add_argument('-j', '--nthreads', action="store", type=int, default="1",
+                            metavar='\b', help="number of threads to use for executables [1]")
+    additional.add_argument('-q', '--quality', action="store", type=int, default="20",
+                            metavar='\b', help="PHRED quality score cutoff [20]")
 
     args    = parser.parse_args()
     prefix  = args.prefix
-    merger  = args.merger
-    if merger != "flash2" and merger != "pear":
-        raise_error("ERROR: Program to merge reads must be equal to \"flash2\" or \"pear\".", merger)
     outname = args.outname
+    threads = args.nthreads
+    quality = args.quality
 
-    run_sickle(prefix)
-
-    if(merger == "flash2"):
-        run_flash2()
-    elif(merger == "pear"):
-        run_pear()
-    else:
-        raise_error("ERROR: Program to merge reads must be equal to \"flash2\" or \"pear\".", merger)
+    print(__header__)
 
 if __name__ == "__main__":
-    # Run the main script if called from command line.
+    """
+    Run the main function when called from command line.
+    """
     main()
