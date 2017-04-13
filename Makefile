@@ -1,4 +1,4 @@
-.PHONY : deps clean install
+.PHONY : deps install uninstall clean
 
 deps :
 	@# Make dependencies directory
@@ -27,6 +27,9 @@ deps :
 
 install :
 	@cp deps/sickle deps/pear deps/flash2 fluidigm2purc /usr/local/bin
+
+uninstall :
+	@rm -i /usr/local/bin/sickle /usr/local/bin/flash2 /usr/local/bin/pear /usr/local/bin/fluidigm2purc
 
 clean :
 	@rm -rf deps
