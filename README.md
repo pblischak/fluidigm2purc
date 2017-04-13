@@ -1,13 +1,13 @@
 ## `fluidigm2purc`
 
-Conversion script for demultiplexed Fluidigm data for input to `PURC`.
+Processing of paired-end Fluidigm data for input to `PURC`
 
 ### Installation
 
 To obtain and install `fluidigm2purc` and its dependencies
 ([`Sickle`](https://github.com/najoshi/sickle),
 [`FLASH2`](https://github.com/dstreett/FLASH2),
-[`PEAR`](https://github.com/xflouris/PEAR) [experimental]),
+[`PEAR`](https://github.com/xflouris/PEAR) _[experimental]_ ),
 run the following commands in a terminal:
 
 ```bash
@@ -19,7 +19,8 @@ make clean
 ```
 
 The Makefile will clone all of the dependencies from GitHub and will compile
-them from source into a folder called `deps`. Typing `sudo make install` will copy
+them from source into a folder called `deps`. You'll need to have C and C++ compilers
+to do this. Typing `sudo make install` will copy
 `fluidigm2purc` and all of the dependencies to `/usr/local/bin` so that you can
 run everything from anywhere on your computer. Typing `make clean` will remove the
 `deps/` folder since we don't need it after everything has been installed.
@@ -28,9 +29,9 @@ A standard run for `fluidigm2purc` will filter and trim reads with `Sickle`, mer
 reads with `FLASH2`, and then process the resulting FASTQ files into FASTA files
 with sequence headers compatible with `PURC` ("PURCifying").
 
-The inclusion of `PEAR` is somewhat experimental because we haven't used it in the
-past. It ostensibly does trimming and merging of reads. However, when one paired
-read is removed, the other one may not be thrown out too (like with Sickle), so
+The inclusion of `PEAR` is experimental at this point because we haven't used it much.
+It ostensibly does both trimming and merging of reads. However, when one paired
+read is removed, the other one may not be thrown out too (like with `Sickle`), so
 the non-combined reads may not match up. We have to test this out more.
 
 ### Running `fluidigm2purc`
@@ -53,6 +54,7 @@ additional arguments:
   -j, --nthreads    number of threads to use for executables [1]
   -q, --quality     PHRED quality score cutoff [20]
   -l, --length      minimum length for Sickle trimming [100]
+  -g, --gzip        compress output fasta [True]
 ```
 
 This list of options can be viewed by typing `fluidigm2purc -h`. The only manditory
@@ -89,4 +91,4 @@ data are demultiplexed. An important thing here is that **taxon names and locus 
 have spaces in them.** The code splits on spaces first, then on colons (":") so that it can
 grab the taxon and locus names (this is specific to the way the Fluidigm data are processed
 by `dbcAmplicons`). Unmerged reads from `FLASH2` are read in together and are
-artificially merged with eight n's in between ("nnnnnnnn").
+artificially combined with eight n's in between ("nnnnnnnn").

@@ -6,8 +6,6 @@
 
 from __future__ import print_function
 import subprocess as sps
-import os
-import sys
 import argparse
 import gzip
 import itertools
@@ -36,7 +34,7 @@ def run_sickle(prefix, outname, quality, min_length):
     trimming tool for FastQ files (Version 1.33) [Software].
     Available at https://github.com/najoshi/sickle.
     """
-    print("\n**** 1. Trimming and filtering paired-end reads with sickle ****\n\n")
+    print("\n**** 1. Trimming and filtering paired-end reads with Sickle ****\n\n")
 
     sickle_cmd = [
         "sickle", "pe",
@@ -64,7 +62,9 @@ def run_flash2(outname, threads):
     short reads to improve genome assemblies. Bioinformatics 27:
     http://bioinformatics.oxfordjournals.org/content/27/21/2957.full
     """
-    print("\n**** 2. Merging reads using FLASH2 ****\n\n")
+    print("\n**** 2. Merging reads using FLASH2 ****\n")
+    print("  Note: FLASH2 always produces a warning about adapter trimming.")
+    print("        It can be safely ignored.\n\n")
 
     flash2_cmd = [
         "flash2",
@@ -72,7 +72,7 @@ def run_flash2(outname, threads):
         "--allow-outies",
         "-t", str(threads),
         "-x", "0.25",
-        "-z",
+        "-z", "--quiet",
         "-o", outname+"-flashed",
         outname+"-sickled_R1.fastq.gz",
         outname+"-sickled_R2.fastq.gz"
@@ -106,7 +106,7 @@ def _run_pear(prefix, outname, quality, threads):
 
     proc = sps.call(pear_cmd)
 
-def PURCify_fastq(outname):
+def PURCify_fastq(outname, gz):
     """
     Function for reading in FASTQ files and converting to PURC-style FASTA.
     Uses taxon and locus names in the FASTQ sequence headers. Prints unmerged
@@ -114,14 +114,17 @@ def PURCify_fastq(outname):
     """
     print("\n**** 3. PURCifying FASTQ files ****\n\n")
     outfile = open(outname+".fasta", 'w')
+    #outfile = gzip.open(outname+".fasta", 'wb')
     line_counter = 1
     for line in gzip.open(outname+"-flashed.extendedFrags.fastq.gz"):
         if line_counter == 1:
             info = line.strip().split(" ")[1].split(":")
             print(">", info[-2], "|", info[-1], file=outfile, sep='')
+            #outfile.write(">%s|%s\n" % (info[-2], info[-1]))
             line_counter = 2
         elif line_counter == 2:
             print(line.strip(), file=outfile, sep='')
+            #outfile.write("%s\n" % (line.strip()))
             line_counter = 3
         elif line_counter == 3:
             line_counter = 4
@@ -141,9 +144,11 @@ def PURCify_fastq(outname):
             assert info1[-1] == info2[-1]
             assert info1[-2] == info2[-2]
             print(">", info1[-2], "|", info1[-1], file=outfile, sep='')
+            #outfile.write(">%s|%s\n" % (info1[-2], info1[-1]))
             line_counter = 2
         elif line_counter == 2:
             print(line1.strip(), "nnnnnnnn", line2.strip(), file=outfile, sep='')
+            #outfile.write("%snnnnnnnn%s\n" % (line1.strip(), line2.strip()))
             line_counter = 3
         elif line_counter == 3:
             line_counter = 4
@@ -151,6 +156,14 @@ def PURCify_fastq(outname):
             line_counter = 1
         else:
             raise_error("Something done messed up.", line_counter)
+
+    if gz:
+        print("**** Compressing output FASTA file '"+outname+".fasta' using gzip. ****\n", sep='')
+        gzip_cmd = [
+            "gzip",
+            outname+".fasta"
+        ]
+        proc = sps.call(gzip_cmd)
 
 #### some utility functions. ###################################################
 
@@ -206,6 +219,8 @@ def main():
                             metavar='\b', help="PHRED quality score cutoff [20]")
     additional.add_argument('-l', '--length', action="store", type=int, default=100,
                             metavar='\b', help="minimum length for Sickle trimming [100]")
+    additional.add_argument('-g', '--gzip', action="store_true", default=False,
+                            help="compress output fasta [False]")
 
     args    = parser.parse_args()
     prefix  = args.fastq_prefix
@@ -214,19 +229,20 @@ def main():
     quality = args.quality
     length  = args.length
     program = args.program
+    gzip    = args.gzip
 
     print(__header__)
 
     if program == "all":
         run_sickle(prefix, outname, quality, length)
         run_flash2(outname, threads)
-        PURCify_fastq(outname)
+        PURCify_fastq(outname, gzip)
     elif program == "sickle":
         run_sickle(prefix, outname, quality, length)
     elif program == "flash2":
         run_flash2(outname, threads)
     elif program == "PURCify":
-        PURCify_fastq(outname)
+        PURCify_fastq(outname, gzip)
     else:
         raise_error("Invalid program spcified. Choose one of the following: 'all', 'sickle', 'flash2', 'PURCify'.", program)
 
