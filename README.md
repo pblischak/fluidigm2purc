@@ -15,12 +15,13 @@ git clone https://github.com/pblischak/fluidigm2purc.git fluidigm2purc
 cd fluidigm2purc
 make
 sudo make install
+make clean
 ```
 
 The Makefile will clone all of the dependencies from GitHub and will compile
 them from source into a folder called `deps`. Typing `sudo make install` will copy
 `fluidigm2purc` and all of the dependencies to `/usr/local/bin` so that you can
-run everything from anywhere on your computer. Typing make clean will remove the
+run everything from anywhere on your computer. Typing `make clean` will remove the
 `deps/` folder since we don't need it after everything has been installed.
 
 A standard run for `fluidigm2purc` will filter and trim reads with `Sickle`, merge
@@ -64,7 +65,7 @@ as well by specifying the name of the step with the `--program` flag.
 fluidigm2purc --fastq_prefix FluidigmData
 
 # To only run Sickle
-fluidigm2purc --fastq_prefix FluidigmData --program sickle_cmd
+fluidigm2purc --fastq_prefix FluidigmData --program sickle
 
 # To only run FLASH2
 fluidigm2purc --fastq_prefix FluidigmData --program flash2
@@ -74,4 +75,4 @@ fluidigm2purc --fastq_prefix FluidigmData --program PURCify
 ```
 
 Additional options can be specified to control parameters for file output,
-multithreading, and trimming/merging reads.
+multithreading, and trimming/merging reads (see above).
