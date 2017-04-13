@@ -27,7 +27,7 @@ Fluidigm platform for input to PURC.
 
 #### functions to run executables, process FASTQs. #############################
 
-def run_sickle():
+def run_sickle(prefix, outname, quality, min_length):
     """
     Runs the program Sickle to trim and filters reads.
 
@@ -36,19 +36,56 @@ def run_sickle():
     trimming tool for FastQ files (Version 1.33) [Software].
     Available at https://github.com/najoshi/sickle.
     """
-    print("\n**** Trimming and filtering paired-end reads with sickle ****\n\n")
+    print("\n**** 1. Trimming and filtering paired-end reads with sickle ****\n\n")
 
     sickle_cmd = [
-        "./deps/sickle",
-        ""
+        "sickle", "pe",
+        "-f", prefix+"_R1.fastq.gz",
+        "-r", prefix+"_R2.fastq.gz",
+        "-t", "sanger",
+        "-o", outname+"-sickled_R1.fastq.gz",
+        "-p", outname+"-sickled_R2.fastq.gz",
+        "-s", outname+"-sickled_singles.fastq.gz",
+        "-q", str(quality),
+        "-l", str(min_length),
+        "-g"
     ]
 
-    proc = sps.Popen(sickle_cmd, stdin=sps.PIPE, stdout=sps.PIPE, close_fds=True)
+    proc = sps.call(sickle_cmd)#, stdin=sps.PIPE, stdout=sps.PIPE, close_fds=True)
 
-def run_pear(prefix, outname, quality, threads):
+def run_flash2(outname, threads):
     """
+    Run th program FLASH2 to merge paired-end reads that are filtered and trimmed
+    by Sickle. The command line arguments are the same that are used by the
+    dbcAplicons script 'reduce_amplicons.R'.
+
+    FLASH2:
+    Tanja Magoč and Steven L. Salzberg. (2011). FLASH: fast length adjustment of
+    short reads to improve genome assemblies. Bioinformatics 27:
+    http://bioinformatics.oxfordjournals.org/content/27/21/2957.full
+    """
+    print("\n**** 2. Merging reads using FLASH2 ****\n\n")
+
+    flash2_cmd = [
+        "flash2",
+        "--max-overlap=600",
+        "--allow-outies",
+        "-t", str(threads),
+        "-x", "0.25",
+        "-z",
+        "-o", outname+"-flashed",
+        outname+"-sickled_R1.fastq.gz",
+        outname+"-sickled_R2.fastq.gz"
+    ]
+
+    proc = sps.call(flash2_cmd)
+
+def _run_pear(prefix, outname, quality, threads):
+    """
+    **** EXPERIMENTAL ****
+
     Run the program PEAR to merge paired-end reads. Performs read trimming
-    so we don't need to do this ahead of time, but can do it using sickle
+    so we don't need to do this ahead of time, but can do it using Sickle
     if you want.
 
     PEAR:
@@ -58,7 +95,7 @@ def run_pear(prefix, outname, quality, threads):
     print("\n**** Merging reads using PEAR ****\n\n")
 
     pear_cmd = [
-        "./deps/pear",
+        "pear",
         "-f", prefix + "_R1.fastq.gz",
         "-r", prefix + "_R2.fastq.gz",
         "-o", outname,
@@ -67,12 +104,53 @@ def run_pear(prefix, outname, quality, threads):
         "-k"
     ]
 
-def PURCify_fastq(prefix):
+    proc = sps.call(pear_cmd)
+
+def PURCify_fastq(outname):
     """
     Function for reading in FASTQ files and converting to PURC-style FASTA.
-    Uses taxon and locus names in the FASTQ sequence headers.
+    Uses taxon and locus names in the FASTQ sequence headers. Prints unmerged
+    reads from FLASH2 with 8 n's in between the two paired reads.
     """
+    print("\n**** 3. PURCifying FASTQ files ****\n\n")
+    outfile = open(outname+".fasta", 'w')
+    line_counter = 1
+    for line in gzip.open(outname+"-flashed.extendedFrags.fastq.gz"):
+        if line_counter == 1:
+            info = line.strip().split(" ")[1].split(":")
+            print(">", info[-2], "|", info[-1], file=outfile, sep='')
+            line_counter = 2
+        elif line_counter == 2:
+            print(line.strip(), file=outfile, sep='')
+            line_counter = 3
+        elif line_counter == 3:
+            line_counter = 4
+        elif line_counter == 4:
+            line_counter = 1
+        else:
+            raise_error("Something done messed up.", line_counter)
 
+    # Combine unmerged reads with 8 N's in between them.
+    unmerged1 = gzip.open(outname+"-flashed.notCombined_1.fastq.gz")
+    unmerged2 = gzip.open(outname+"-flashed.notCombined_2.fastq.gz")
+    line_counter = 1
+    for line1, line2 in itertools.izip(unmerged1,unmerged2):
+        if line_counter == 1:
+            info1 = line1.strip().split(" ")[1].split(":")
+            info2 = line2.strip().split(" ")[1].split(":")
+            assert info1[-1] == info2[-1]
+            assert info1[-2] == info2[-2]
+            print(">", info1[-2], "|", info1[-1], file=outfile, sep='')
+            line_counter = 2
+        elif line_counter == 2:
+            print(line1.strip(), "nnnnnnnn", line2.strip(), file=outfile, sep='')
+            line_counter = 3
+        elif line_counter == 3:
+            line_counter = 4
+        elif line_counter == 4:
+            line_counter = 1
+        else:
+            raise_error("Something done messed up.", line_counter)
 
 #### some utility functions. ###################################################
 
@@ -84,18 +162,19 @@ def raise_error(error_message, bad_arg):
     print("  => Option provided: ", bad_arg, "\n", sep='')
     sys.exit(-1)
 
-def progressbar():
+def get_N_lines(file, nlines):
     """
-    Prints a progress bar as data are processed.
+    Go through file N lines at a time.
 
-    Got the idea and code from ipyrad -- assemble/util.py.
-    (Eaton and Overcast; https://github.com/dereneaton/ipyrad)
+    https://coderwall.com/p/5vi8ca/use-python-to-read-file-by-n-lines-each-time
     """
+    return [x.strip() for x in islice(file, nlines)]
 
 def write_PURC_config():
     """
     Writes skeleton of PURC config file.
     """
+
 #### main functions. ###########################################################
 
 def main():
@@ -113,24 +192,43 @@ def main():
                         version=__version__)
 
     required = parser.add_argument_group("required arguments")
-    required.add_argument('-p', '--prefix', action="store", required=True,
+    required.add_argument('-f', '--fastq_prefix', action="store", required=True,
                           metavar='\b', help="prefix for paired-end FASTQ files")
 
     additional = parser.add_argument_group("additional arguments")
+    additional.add_argument('-p', '--program', action="store", type=str, default="all",
+                            metavar='\b', help="programs to run [all]")
     additional.add_argument('-o', '--outname', action="store", type=str, default="output",
                             metavar='\b', help="base name for output fasta file [output]")
-    additional.add_argument('-j', '--nthreads', action="store", type=int, default="1",
+    additional.add_argument('-j', '--nthreads', action="store", type=int, default=1,
                             metavar='\b', help="number of threads to use for executables [1]")
-    additional.add_argument('-q', '--quality', action="store", type=int, default="20",
+    additional.add_argument('-q', '--quality', action="store", type=int, default=20,
                             metavar='\b', help="PHRED quality score cutoff [20]")
+    additional.add_argument('-l', '--length', action="store", type=int, default=100,
+                            metavar='\b', help="minimum length for Sickle trimming [100]")
 
     args    = parser.parse_args()
-    prefix  = args.prefix
+    prefix  = args.fastq_prefix
     outname = args.outname
     threads = args.nthreads
     quality = args.quality
+    length  = args.length
+    program = args.program
 
     print(__header__)
+
+    if program == "all":
+        run_sickle(prefix, outname, quality, length)
+        run_flash2(outname, threads)
+        PURCify_fastq(outname)
+    elif program == "sickle":
+        run_sickle(prefix, outname, quality, length)
+    elif program == "flash2":
+        run_flash2(outname, threads)
+    elif program == "PURCify":
+        PURCify_fastq(outname)
+    else:
+        raise_error("Invalid program spcified. Choose one of the following: 'all', 'sickle', 'flash2', 'PURCify'.", program)
 
 if __name__ == "__main__":
     """
