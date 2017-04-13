@@ -26,7 +26,7 @@ deps :
 	@rm -rf deps/sickle_dir
 
 install :
-	@cp deps/sickle deps/pear fluidigm2purc /usr/local/bin
+	@cp deps/sickle deps/pear deps/flash2 fluidigm2purc /usr/local/bin
 
 clean :
 	@rm -rf deps
