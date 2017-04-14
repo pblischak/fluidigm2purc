@@ -146,7 +146,7 @@ def PURCify_fastq(outname, gz):
     for line in gzip.open(outname+"-flashed.extendedFrags.fastq.gz"):
         if line_counter == 1:
             info = line.strip().split(" ")[1].split(":")
-            print(">", info[-2], "|", info[-1], file=outfile, sep='')
+            print(">locus=", info[-1], "/ref_taxon=", info[-2], file=outfile, sep='')
             if info[-1] not in loci:
                 loci.append(info[-1])
             if info[-2] not in taxa:
@@ -172,7 +172,7 @@ def PURCify_fastq(outname, gz):
             info2 = line2.strip().split(" ")[1].split(":")
             assert info1[-1] == info2[-1]
             assert info1[-2] == info2[-2]
-            print(">", info1[-2], "|", info1[-1], file=outfile, sep='')
+            print(">locus=", info1[-1], "/ref_taxon", info1[-2], file=outfile, sep='')
             if info[-1] not in loci:
                 loci.append(info[-1])
             if info[-2] not in taxa:
@@ -189,7 +189,8 @@ def PURCify_fastq(outname, gz):
             raise_error("Something done messed up.", line_counter)
 
     if gz:
-        print("**** Compressing output FASTA file '"+outname+".fasta' using gzip. ****\n", sep='')
+        print("**** Compressing output FASTA file '"+outname+ \
+              ".fasta' using gzip. ****\n", sep='')
         gzip_cmd = [
             "gzip",
             outname+".fasta"
@@ -284,7 +285,8 @@ def main():
     elif program == "PURCify":
         PURCify_fastq(outname, gzip)
     else:
-        raise_error("Invalid program spcified. Choose one of the following: 'all', 'sickle', 'flash2', 'PURCify'.", program)
+        raise_error("Invalid program spcified. Choose one of the following: "\
+                    "'all', 'sickle', 'flash2', 'PURCify'.", program)
 
     write_log(outname, sys.argv, program)
     print("**** DONE: Run info written to '" + outname + ".log' ****\n", sep='')

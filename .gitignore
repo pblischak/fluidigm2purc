@@ -1,4 +1,5 @@
 deps
+tests
 *.pyc
 .DS_Store
 *~
