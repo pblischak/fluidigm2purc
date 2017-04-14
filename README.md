@@ -19,7 +19,7 @@ make clean
 ```
 
 The Makefile will clone all of the dependencies from GitHub and will compile
-them from source into a folder called `deps`. You'll need to have C and C++ compilers
+them from source into a folder called `deps/`. You'll need to have C and C++ compilers
 to do this. Typing `sudo make install` will copy
 `fluidigm2purc` and all of the dependencies to `/usr/local/bin` so that you can
 run everything from anywhere on your computer. Typing `make clean` will remove the
@@ -54,7 +54,7 @@ additional arguments:
   -j, --nthreads    number of threads to use for executables [1]
   -q, --quality     PHRED quality score cutoff [20]
   -l, --length      minimum length for Sickle trimming [100]
-  -g, --gzip        compress output fasta [True]
+  -g, --gzip        compress output fasta [False]
 ```
 
 This list of options can be viewed by typing `fluidigm2purc -h`. The only manditory

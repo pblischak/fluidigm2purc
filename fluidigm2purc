@@ -57,12 +57,11 @@ def run_sickle(prefix, outname, quality, min_length):
         "-l", str(min_length),
         "-g"
     ]
-
     proc = sps.call(sickle_cmd)#, stdin=sps.PIPE, stdout=sps.PIPE, close_fds=True)
 
 def run_flash2(outname, threads):
     """
-    Run th program FLASH2 to merge paired-end reads that are filtered and trimmed
+    Run the program FLASH2 to merge paired-end reads that are filtered and trimmed
     by Sickle. The command line arguments are the same that are used by the
     dbcAplicons script 'reduce_amplicons.R'.
 
@@ -96,10 +95,9 @@ def run_flash2(outname, threads):
         outname+"-sickled_R1.fastq.gz",
         outname+"-sickled_R2.fastq.gz"
     ]
-
     proc = sps.call(flash2_cmd)
 
-def _run_pear(prefix, outname, quality, threads):
+def _run_pear(prefix, outname, quality, length, threads):
     """
     **** EXPERIMENTAL ****
 
@@ -111,7 +109,15 @@ def _run_pear(prefix, outname, quality, threads):
     J. Zhang, K. Kobert, T. Flouri, A. Stamatakis. PEAR: A fast and accurate
     Illumina Paired-End reAd mergeR. Bioinformatics 30(5): 614-620, 2014.
     """
-    print("\n**** Merging reads using PEAR ****\n\n")
+    print("\n**** 1&2. Trimming and merging reads using PEAR ****\n")
+    # test the executable first
+    print("  Checking PEAR executable...    ", end='')
+    test_proc = sps.Popen(['pear'], stdout=sps.PIPE, stderr=sps.PIPE, shell=True)
+    (out, err) = test_proc.communicate()
+    if not str(out).startswith(' ____'):
+        sys.exit("\n\n** ERROR: Could not execute PEAR **\n\n")
+    else:
+        print("Good\n")
 
     pear_cmd = [
         "pear",
@@ -122,12 +128,9 @@ def _run_pear(prefix, outname, quality, threads):
         "-j", str(threads),
         "-k"
     ]
-
-
     proc = sps.call(pear_cmd)
 
-
-# Define global variables for taxa and loci.
+# Define global list variables for taxa and loci.
 # Used for writing logfile.
 taxa = []
 loci = []
@@ -139,7 +142,6 @@ def PURCify_fastq(outname, gz):
     """
     print("\n**** 3. PURCifying FASTQ files ****\n\n")
     outfile = open(outname+".fasta", 'w')
-    #outfile = gzip.open(outname+".fasta", 'wb')
     line_counter = 1
     for line in gzip.open(outname+"-flashed.extendedFrags.fastq.gz"):
         if line_counter == 1:
@@ -149,11 +151,9 @@ def PURCify_fastq(outname, gz):
                 loci.append(info[-1])
             if info[-2] not in taxa:
                 taxa.append(info[-2])
-            #outfile.write(">%s|%s\n" % (info[-2], info[-1]))
             line_counter = 2
         elif line_counter == 2:
             print(line.strip(), file=outfile, sep='')
-            #outfile.write("%s\n" % (line.strip()))
             line_counter = 3
         elif line_counter == 3:
             line_counter = 4
@@ -177,11 +177,9 @@ def PURCify_fastq(outname, gz):
                 loci.append(info[-1])
             if info[-2] not in taxa:
                 taxa.append(info[-2])
-            #outfile.write(">%s|%s\n" % (info1[-2], info1[-1]))
             line_counter = 2
         elif line_counter == 2:
             print(line1.strip(), "nnnnnnnn", line2.strip(), file=outfile, sep='')
-            #outfile.write("%snnnnnnnn%s\n" % (line1.strip(), line2.strip()))
             line_counter = 3
         elif line_counter == 3:
             line_counter = 4
@@ -233,10 +231,11 @@ def main():
     """
     Main function for fluidigm2purc.
 
-    It parses command line arguments and runs two or three steps:
-        1. Optional paired end trimming and filtering of reads using Sickle.
-        2. Read merging (and optional trimming) using PEAR.
-        3. Converting merged FASTQ files to fasta with modified sequence headers.
+    It parses command line arguments and runs three main steps:
+        1. Paired end trimming and filtering of reads using Sickle.
+        2. Read merging (and optional trimming) using FLASH2.
+        3. PURCifying merged and unmerged FASTQ files to FASTA with
+           modified sequence headers for input to PURC.
     """
     parser = argparse.ArgumentParser(description="Options for fluidigm2purc",
                                      add_help=True)
@@ -249,7 +248,7 @@ def main():
 
     additional = parser.add_argument_group("additional arguments")
     additional.add_argument('-p', '--program', action="store", type=str, default="all",
-                            metavar='\b', help="programs to run [all]")
+                            metavar='\b', help="program(s) to run [all]")
     additional.add_argument('-o', '--outname', action="store", type=str, default="output",
                             metavar='\b', help="base name for output fasta file [output]")
     additional.add_argument('-j', '--nthreads', action="store", type=int, default=1,
@@ -276,6 +275,8 @@ def main():
         run_sickle(prefix, outname, quality, length)
         run_flash2(outname, threads)
         PURCify_fastq(outname, gzip)
+    elif program == "_pear":
+        _run_pear(prefix, outname, quality, length, threads)
     elif program == "sickle":
         run_sickle(prefix, outname, quality, length)
     elif program == "flash2":
