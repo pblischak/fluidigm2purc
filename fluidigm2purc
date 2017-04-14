@@ -146,7 +146,7 @@ def PURCify_fastq(outname, gz):
     for line in gzip.open(outname+"-flashed.extendedFrags.fastq.gz"):
         if line_counter == 1:
             info = line.strip().split(" ")[1].split(":")
-            print(">locus=", info[-1], "/ref_taxon=", info[-2], file=outfile, sep='')
+            print(">", info[-2], "|", info[-1], file=outfile, sep='')
             if info[-1] not in loci:
                 loci.append(info[-1])
             if info[-2] not in taxa:
@@ -172,7 +172,7 @@ def PURCify_fastq(outname, gz):
             info2 = line2.strip().split(" ")[1].split(":")
             assert info1[-1] == info2[-1]
             assert info1[-2] == info2[-2]
-            print(">locus=", info1[-1], "/ref_taxon", info1[-2], file=outfile, sep='')
+            print(">", info1[-2], "|", info1[-1], file=outfile, sep='')
             if info[-1] not in loci:
                 loci.append(info[-1])
             if info[-2] not in taxa:
@@ -249,17 +249,17 @@ def main():
 
     additional = parser.add_argument_group("additional arguments")
     additional.add_argument('-p', '--program', action="store", type=str, default="all",
-                            metavar='\b', help="program(s) to run [all]")
+                            metavar='\b', help="program(s) to run [default=all; options=sickle, flash2, PURCify, all]")
     additional.add_argument('-o', '--outname', action="store", type=str, default="output",
-                            metavar='\b', help="base name for output fasta file [output]")
+                            metavar='\b', help="base name for output fasta file [default=output]")
     additional.add_argument('-j', '--nthreads', action="store", type=int, default=1,
-                            metavar='\b', help="number of threads to use for executables [1]")
+                            metavar='\b', help="number of threads to use for executables [default=1]")
     additional.add_argument('-q', '--quality', action="store", type=int, default=20,
-                            metavar='\b', help="PHRED quality score cutoff [20]")
+                            metavar='\b', help="PHRED quality score cutoff [default=20]")
     additional.add_argument('-l', '--length', action="store", type=int, default=100,
-                            metavar='\b', help="minimum length for Sickle trimming [100]")
+                            metavar='\b', help="minimum length for Sickle trimming [default=100]")
     additional.add_argument('-g', '--gzip', action="store_true", default=False,
-                            help="compress output fasta [False]")
+                            help="flag to compress output fasta")
 
     args    = parser.parse_args()
     prefix  = args.fastq_prefix
