@@ -83,12 +83,13 @@ multithreading, and trimming/merging reads (see above).
 
 The conversion from FASTQ to FASTA is straightforward because FASTA only uses the
 first two lines of every four line sequence entry in the FASTQ file. The important
-bit here is that we grab the important information from the sequence header in
-the FASTQ file and print it so that it is compatible with PURC. The important information
-here is the taxon name and the locus name. These are added by
+bit here is that we grab the relevant information from the sequence header in
+the FASTQ file and print it so that it is compatible with PURC. The things that
+we want are the taxon name and the locus name. These are added by
 [`dbcAmplicons`](https://github.com/msettles/dbcAmplicons) when the Fluidigm
-data are demultiplexed. An important thing here is that **taxon names and locus names can't
+data are demultiplexed. **Taxon names and locus names can't
 have spaces in them.** The code splits on spaces first, then on colons (":") so that it can
 grab the taxon and locus names (this is specific to the way the Fluidigm data are processed
-by `dbcAmplicons`). Unmerged reads from `FLASH2` are read in together and are
+by `dbcAmplicons`). Merged reads from `FLASH2` are processed first.
+Unmerged reads are then read in together and are
 artificially combined with eight n's in between ("nnnnnnnn").

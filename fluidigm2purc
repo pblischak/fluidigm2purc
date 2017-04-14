@@ -6,6 +6,7 @@
 
 from __future__ import print_function
 import subprocess as sps
+import sys
 import argparse
 import gzip
 import itertools
@@ -14,8 +15,7 @@ import itertools
 
 __version__ = "This is fluidigm2purc v0.1.0-alpha (April 2017)."
 
-__header__ = """
-**********************************************
+__header__ = """**********************************************
 fluidigm2purc (v0.1.0-alpha)
 
 Processing of paired-end FASTQ data from the
@@ -35,6 +35,15 @@ def run_sickle(prefix, outname, quality, min_length):
     Available at https://github.com/najoshi/sickle.
     """
     print("\n**** 1. Trimming and filtering paired-end reads with Sickle ****\n\n")
+
+    # test the executable first
+    print("  Checking Sickle executable...    ", end='')
+    test_proc = sps.Popen(['sickle'], stdout=sps.PIPE, stderr=sps.PIPE, shell=True)
+    (out, err) = test_proc.communicate()
+    if not str(out).startswith('\nUsage'):
+        sys.exit("\n\n** ERROR: could not execute Sickle **\n\n")
+    else:
+        print("Good\n")
 
     sickle_cmd = [
         "sickle", "pe",
@@ -63,6 +72,16 @@ def run_flash2(outname, threads):
     http://bioinformatics.oxfordjournals.org/content/27/21/2957.full
     """
     print("\n**** 2. Merging reads using FLASH2 ****\n")
+
+    # test the executable first
+    print("  Checking FLASH2 executable...    ", end='')
+    test_proc = sps.Popen(['flash2'], stdout=sps.PIPE, stderr=sps.PIPE, shell=True)
+    (out, err) = test_proc.communicate()
+    if not str(err).startswith('Usage'):
+        sys.exit("\n\n** ERROR: Could not execute FLASH2 **\n\n")
+    else:
+        print("Good\n")
+
     print("  Note: FLASH2 always produces a warning about adapter trimming.")
     print("        It can be safely ignored.\n\n")
 
@@ -104,8 +123,14 @@ def _run_pear(prefix, outname, quality, threads):
         "-k"
     ]
 
+
     proc = sps.call(pear_cmd)
 
+
+# Define global variables for taxa and loci.
+# Used for writing logfile.
+taxa = []
+loci = []
 def PURCify_fastq(outname, gz):
     """
     Function for reading in FASTQ files and converting to PURC-style FASTA.
@@ -120,6 +145,10 @@ def PURCify_fastq(outname, gz):
         if line_counter == 1:
             info = line.strip().split(" ")[1].split(":")
             print(">", info[-2], "|", info[-1], file=outfile, sep='')
+            if info[-1] not in loci:
+                loci.append(info[-1])
+            if info[-2] not in taxa:
+                taxa.append(info[-2])
             #outfile.write(">%s|%s\n" % (info[-2], info[-1]))
             line_counter = 2
         elif line_counter == 2:
@@ -144,6 +173,10 @@ def PURCify_fastq(outname, gz):
             assert info1[-1] == info2[-1]
             assert info1[-2] == info2[-2]
             print(">", info1[-2], "|", info1[-1], file=outfile, sep='')
+            if info[-1] not in loci:
+                loci.append(info[-1])
+            if info[-2] not in taxa:
+                taxa.append(info[-2])
             #outfile.write(">%s|%s\n" % (info1[-2], info1[-1]))
             line_counter = 2
         elif line_counter == 2:
@@ -175,18 +208,24 @@ def raise_error(error_message, bad_arg):
     print("  => Option provided: ", bad_arg, "\n", sep='')
     sys.exit(-1)
 
-def get_N_lines(file, nlines):
+def write_log(outname, args, program):
     """
-    Go through file N lines at a time.
+    Writes summary of fluidigm2purc run.
+    Prints taxa and loci retained after filtering.
+    """
+    logfile = open(outname+".log", 'w')
+    print(__header__, file=logfile)
+    print("Command line call:\n  ", end='', file=logfile)
+    for a in args:
+        print(a, " ", sep='', end='', file=logfile)
 
-    https://coderwall.com/p/5vi8ca/use-python-to-read-file-by-n-lines-each-time
-    """
-    return [x.strip() for x in islice(file, nlines)]
-
-def write_PURC_config():
-    """
-    Writes skeleton of PURC config file.
-    """
+    if program == "all" or program == "PURCify":
+        print("\n\nTaxa retained:\n", end='', file=logfile)
+        for t in taxa:
+            print("  ", t, file=logfile)
+        print("\nLoci retained:\n", end='', file=logfile)
+        for l in loci:
+            print("  ", l, file=logfile)
 
 #### main functions. ###########################################################
 
@@ -231,7 +270,7 @@ def main():
     program = args.program
     gzip    = args.gzip
 
-    print(__header__)
+    print("\n", __header__, sep='')
 
     if program == "all":
         run_sickle(prefix, outname, quality, length)
@@ -245,6 +284,9 @@ def main():
         PURCify_fastq(outname, gzip)
     else:
         raise_error("Invalid program spcified. Choose one of the following: 'all', 'sickle', 'flash2', 'PURCify'.", program)
+
+    write_log(outname, sys.argv, program)
+    print("**** DONE: Run info written to '" + outname + ".log' ****\n", sep='')
 
 if __name__ == "__main__":
     """
