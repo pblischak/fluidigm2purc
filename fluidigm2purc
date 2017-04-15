@@ -7,6 +7,7 @@
 from __future__ import print_function
 import subprocess as sps
 import sys
+import os
 import argparse
 import gzip
 import itertools
@@ -141,19 +142,28 @@ def PURCify_fastq(outname, gz):
     reads from FLASH2 with 8 n's in between the two paired reads.
     """
     print("\n**** 3. PURCifying FASTQ files ****\n\n")
-    outfile = open(outname+".fasta", 'w')
+    locus_outfiles = {}
+    if not os.path.exists("./"+outname+"-FASTA"):
+        os.makedirs("./"+outname+"-FASTA")
+    else:
+        print("  Output directory for FASTA files alread exists ("+outname+"-FASTA/).")
+        print("  Please use a different outname to prevent overwriting it.\n")
+        sys.exit(-1)
     line_counter = 1
     for line in gzip.open(outname+"-flashed.extendedFrags.fastq.gz"):
         if line_counter == 1:
             info = line.strip().split(" ")[1].split(":")
-            print(">", info[-2], "|", info[-1], file=outfile, sep='')
+            if info[-1] not in locus_outfiles.keys():
+                locus_outfiles[info[-1]] = open("./"+outname+"-FASTA/"+info[-1]+".fasta", 'w')
+            print(">", info[-2], "|", info[-1], file=locus_outfiles[info[-1]], sep='')
             if info[-1] not in loci:
                 loci.append(info[-1])
             if info[-2] not in taxa:
                 taxa.append(info[-2])
             line_counter = 2
+            prev_locus = info[-1]
         elif line_counter == 2:
-            print(line.strip(), file=outfile, sep='')
+            print(line.strip(), file=locus_outfiles[prev_locus], sep='')
             line_counter = 3
         elif line_counter == 3:
             line_counter = 4
@@ -172,14 +182,17 @@ def PURCify_fastq(outname, gz):
             info2 = line2.strip().split(" ")[1].split(":")
             assert info1[-1] == info2[-1]
             assert info1[-2] == info2[-2]
-            print(">", info1[-2], "|", info1[-1], file=outfile, sep='')
-            if info[-1] not in loci:
-                loci.append(info[-1])
-            if info[-2] not in taxa:
-                taxa.append(info[-2])
+            if info1[-1] not in locus_outfiles.keys():
+                locus_outfiles[info1[-1]] = open("./"+outname+"-FASTA/"+info1[-1]+".fasta", 'w')
+            print(">", info1[-2], "|", info1[-1], file=locus_outfiles[info1[-1]], sep='')
+            if info1[-1] not in loci:
+                loci.append(info1[-1])
+            if info1[-2] not in taxa:
+                taxa.append(info1[-2])
             line_counter = 2
+            prev_locus = info1[-1]
         elif line_counter == 2:
-            print(line1.strip(), "nnnnnnnn", line2.strip(), file=outfile, sep='')
+            print(line1.strip(), "NNNNNNNN", line2.strip(), file=locus_outfiles[prev_locus], sep='')
             line_counter = 3
         elif line_counter == 3:
             line_counter = 4
@@ -188,14 +201,14 @@ def PURCify_fastq(outname, gz):
         else:
             raise_error("Something done messed up.", line_counter)
 
-    if gz:
-        print("**** Compressing output FASTA file '"+outname+ \
-              ".fasta' using gzip. ****\n", sep='')
-        gzip_cmd = [
-            "gzip",
-            outname+".fasta"
-        ]
-        proc = sps.call(gzip_cmd)
+    #if gz:
+    #    print("**** Compressing output FASTA file '"+outname+ \
+    #          ".fasta' using gzip. ****\n", sep='')
+    #    gzip_cmd = [
+    #        "gzip",
+    #        outname+".fasta"
+    #    ]
+    #    proc = sps.call(gzip_cmd)
 
 #### some utility functions. ###################################################
 
