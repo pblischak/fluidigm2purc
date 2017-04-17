@@ -15,6 +15,9 @@ git clone https://github.com/pblischak/fluidigm2purc.git fluidigm2purc
 cd fluidigm2purc
 make
 sudo make install
+
+# If you want to compile pear
+make pear
 ```
 
 The Makefile will clone all of the dependencies from GitHub and will compile
