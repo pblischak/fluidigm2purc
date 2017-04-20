@@ -1,4 +1,4 @@
-.PHONY : deps install uninstall clean pear
+.PHONY : deps install uninstall clean pear test
 
 deps :
 	@# Make dependencies directory
@@ -34,3 +34,6 @@ uninstall :
 
 clean :
 	@rm -rf deps
+
+test :
+	@cd tests; fluidigm2purc -f TEST

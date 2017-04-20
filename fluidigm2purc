@@ -150,17 +150,19 @@ def PURCify_fastq(outname, gz):
         print("  Please use a different outname to prevent overwriting it.\n")
         sys.exit(-1)
     line_counter = 1
+    read_counter = 1
     for line in gzip.open(outname+"-flashed.extendedFrags.fastq.gz"):
         if line_counter == 1:
             info = line.strip().split(" ")[1].split(":")
             if info[-1] not in locus_outfiles.keys():
                 locus_outfiles[info[-1]] = open("./"+outname+"-FASTA/"+info[-1]+".fasta", 'w')
-            print(">", info[-2], "|", info[-1], file=locus_outfiles[info[-1]], sep='')
+            print(">", info[-2], "|", info[-1], "|", str(read_counter), file=locus_outfiles[info[-1]], sep='')
             if info[-1] not in loci:
                 loci.append(info[-1])
             if info[-2] not in taxa:
                 taxa.append(info[-2])
             line_counter = 2
+            read_counter += 1
             prev_locus = info[-1]
         elif line_counter == 2:
             print(line.strip(), file=locus_outfiles[prev_locus], sep='')
