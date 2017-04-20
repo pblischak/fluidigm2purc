@@ -186,12 +186,13 @@ def PURCify_fastq(outname, gz):
             assert info1[-2] == info2[-2]
             if info1[-1] not in locus_outfiles.keys():
                 locus_outfiles[info1[-1]] = open("./"+outname+"-FASTA/"+info1[-1]+".fasta", 'w')
-            print(">", info1[-2], "|", info1[-1], file=locus_outfiles[info1[-1]], sep='')
+            print(">", info1[-2], "|", info1[-1], "|", str(read_counter), file=locus_outfiles[info1[-1]], sep='')
             if info1[-1] not in loci:
                 loci.append(info1[-1])
             if info1[-2] not in taxa:
                 taxa.append(info1[-2])
             line_counter = 2
+            read_counter += 1
             prev_locus = info1[-1]
         elif line_counter == 2:
             print(line1.strip(), "NNNNNNNN", line2.strip(), file=locus_outfiles[prev_locus], sep='')
