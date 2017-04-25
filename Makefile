@@ -27,10 +27,10 @@ pear :
 	@rm -rf deps/pear_dir
 
 install :
-	@cp deps/sickle deps/flash2 fluidigm2purc /usr/local/bin
+	@cp deps/sickle deps/flash2 fluidigm2purc crunch_clusters /usr/local/bin
 
 uninstall :
-	@rm -i /usr/local/bin/sickle /usr/local/bin/flash2 /usr/local/bin/pear /usr/local/bin/fluidigm2purc
+	@rm -i /usr/local/bin/sickle /usr/local/bin/flash2 /usr/local/bin/pear /usr/local/bin/fluidigm2purc /usr/local/bin/crunch_clusters
 
 clean :
 	@rm -rf deps
