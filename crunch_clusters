@@ -1,0 +1,123 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# crunch_clusters
+# Written by PD Blischak
+
+from __future__ import print_function, division
+import argparse
+from Bio import SeqIO
+import numpy as np
+import pandas as pd
+import scipy.stats as stat
+import operator
+import math
+import sys
+import re
+
+#### header and version info. ##################################################
+
+__version__ = "This is crunch_clusters v0.1.0-alpha (April 2017)."
+
+__header__ = """**********************************************
+crunch_clusters (v0.1.0-alpha)
+
+Processing of PURC clusters into haplotype
+configurations.
+**********************************************
+"""
+
+# http://stackoverflow.com/questions/10035752/elegant-python-code-for-integer-partitioning
+# Stack Overflow saves the day again
+def partition(number):
+    """
+    Gives the full list of partitions for and integer n.
+    """
+    answer = set()
+    answer.add((number, ))
+    for x in range(1, number):
+        for y in partition(number - x):
+            answer.add(tuple(sorted((x, ) + y, reverse=True)))
+    return answer
+
+def resolve_haps(ploidy, num_alleles):
+    """
+    Enumerate the way that the integer n can be written as a sum of k, smaller
+    integers. Returns a list of tuples each of size num_alleles.
+    """
+    assert num_alleles <= ploidy
+    return [i for i in partition(ploidy) if len(i) == num_alleles]
+
+def log_lik(sizes, ploidy, error):
+    """
+    Get the maximum likelihood haplotype configuration based on
+    the multinomial pmf for cluster counts. Uses ploidy information
+    if it is available. Otherwise, it uses a relative cutoff based
+    on the distribution of cluster sizes.
+    """
+    lliks = {}
+    for a in range (1,len(sizes)+1):
+        haplotypes = resolve_haps(len(sizes), a)
+        for h in haplotypes:
+            lliks[h] = 0.0
+            for g in range(0,len(h)):
+                lliks[h] += sizes[g][1] * math.log(h[g] / ploidy)
+            for e in range(len(h), len(sizes)):
+                lliks[h] +=  sizes[e][1] * math.log(error)
+    return lliks
+
+def crunch_clusters(fasta, species_df, method):
+    """
+
+    """
+    idx = SeqIO.index(fasta, "fasta")
+    headers = [i for i in idx.keys()]
+    taxon_set = set([i.split("_")[0] for i in idx.keys()])
+
+    outfile = open("test.fasta", 'w')
+    for t in list(taxon_set):
+        clusters = [m.group(0) for h in headers for m in [re.match(t+".*", h)] if m]
+        sizes = {s: int(s.split(";")[1].split("=")[1]) for s in clusters}
+        sorted_sizes = sorted(sizes.items(), key=operator.itemgetter(1), reverse=True)
+        # Catch the case when # of clusters is less than ploidy
+        if len(sorted_sizes) >= ploidy:
+            ll = log_lik(sorted_sizes[0:ploidy], ploidy)
+        else:
+            ll = log_lik(sorted_sizes, ploidy)
+            mle = sorted(ll.items(), key=operator.itemgetter(1), reverse=True)
+            #print(list(mle[0][0]))
+        for m in range(0, len(mle[0][0])):
+            allele_num = 1
+            for rep in range(0, mle[0][0][m]):
+                print(">"+str(idx[sorted_sizes[m][0]].id)+"A_"+str(allele_num), file=outfile)
+                print(str(idx[sorted_sizes[m][0]].seq), file=outfile)
+                allele_num += 1
+
+def main():
+    parser = argparse.ArgumentParser(description="Options for crunch_clusters",
+                                     add_help=True)
+
+    required = parser.add_argument_group("required arguments")
+    required.add_argument('-f', '--fasta', action="store", type=str, required=True,
+                          metavar='\b', help="FASTA file with sequenc clusters")
+    required.add_argument('-s', '--species_df', action="store", type=str, required=True,
+                          metavar='\b', help="Data frame with taxon metadata")
+
+    additional = parser.add_argument_group("additional arguments")
+    additional.add_argument('-m', '--method', action="store", type=str, default="mle", choices=["mle", "relative"],
+                            metavar='\b', help="method for allele calling [default=mle]")
+
+    args       = parser.parse_args()
+    fasta      = args.fasta
+    species_df = args.species_df
+    method     = args.method
+
+
+
+    crunch_clusters(fasta, species_df, method)
+
+if __name__ == "__main__":
+    """
+    Run the main sript.
+    """
+    main()
