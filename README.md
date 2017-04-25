@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/pblischak/fluidigm2purc.svg?branch=master)](https://travis-ci.org/pblischak/fluidigm2purc) [![Documentation Status](https://readthedocs.org/projects/fluidigm2purc/badge/?version=latest)](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest)
+
+
 ## `fluidigm2purc`
 
 Processing of paired-end Fluidigm data for input to `PURC`
