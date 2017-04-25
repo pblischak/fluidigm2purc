@@ -24,6 +24,17 @@ Fluidigm platform for input to PURC.
 **********************************************
 """
 
+#### PHRED conversion dictionary. ##############################################
+PHRED = {'!': 1.00, '"': 0.79433, '#': 0.63096, '$': 0.50119, '%': 0.39811,
+         '&': 0.31623, '\'': 0.25119, '(': 0.19953, ')': 0.15849, '*': 0.12589,
+         '+': 0.10000, ',': 0.07943, '-': 0.06310, '.': 0.05012, '/': 0.03981,
+         '0': 0.03162, '1': 0.02512, '2': 0.01995, '3': 0.01585, '4': 0.01259,
+         '5': 0.01000, '6': 0.00784, '7': 0.00631, '8': 0.00501, '9': 0.00398,
+         ':': 0.00316, ';': 0.00251, '<': 0.00200, '=': 0.00158, '>': 0.00126,
+         '?': 0.00100, '@': 0.00079, 'A': 0.00063, 'B': 0.00050, 'C': 0.00040,
+         'D': 0.00032, 'E': 0.00025, 'F': 0.00020, 'G': 0.00016, 'H': 0.00013,
+         'I': 0.00010, 'J': 0.00008, 'K': 0.00006}
+
 #### functions to run executables, process FASTQs. #############################
 
 def run_sickle(prefix, outname, quality, min_length):
@@ -135,6 +146,7 @@ def _run_pear(prefix, outname, quality, length, threads):
 # Used for writing logfile.
 taxa = []
 loci = []
+per_locus_error = {}
 def PURCify_fastq(outname, gz):
     """
     Function for reading in FASTQ files and converting to PURC-style FASTA.
@@ -158,6 +170,7 @@ def PURCify_fastq(outname, gz):
                 locus_outfiles[info[-1]] = open("./"+outname+"-FASTA/"+info[-1]+".fasta", 'w')
             print(">", info[-2], "|", info[-1], "|", str(read_counter), file=locus_outfiles[info[-1]], sep='')
             if info[-1] not in loci:
+                per_locus_error[info[-1]] = []
                 loci.append(info[-1])
             if info[-2] not in taxa:
                 taxa.append(info[-2])
@@ -170,6 +183,7 @@ def PURCify_fastq(outname, gz):
         elif line_counter == 3:
             line_counter = 4
         elif line_counter == 4:
+            per_locus_error[info[-1]].append(convert_phred(line.strip()))
             line_counter = 1
         else:
             raise_error("Something done messed up.", line_counter)
@@ -188,6 +202,7 @@ def PURCify_fastq(outname, gz):
                 locus_outfiles[info1[-1]] = open("./"+outname+"-FASTA/"+info1[-1]+".fasta", 'w')
             print(">", info1[-2], "|", info1[-1], "|", str(read_counter), file=locus_outfiles[info1[-1]], sep='')
             if info1[-1] not in loci:
+                per_locus_error[info[-1]] = []
                 loci.append(info1[-1])
             if info1[-2] not in taxa:
                 taxa.append(info1[-2])
@@ -200,18 +215,10 @@ def PURCify_fastq(outname, gz):
         elif line_counter == 3:
             line_counter = 4
         elif line_counter == 4:
+            per_locus_error[info[-1]].append(convert_phred(line1.strip()+line2.strip()))
             line_counter = 1
         else:
             raise_error("Something done messed up.", line_counter)
-
-    #if gz:
-    #    print("**** Compressing output FASTA file '"+outname+ \
-    #          ".fasta' using gzip. ****\n", sep='')
-    #    gzip_cmd = [
-    #        "gzip",
-    #        outname+".fasta"
-    #    ]
-    #    proc = sps.call(gzip_cmd)
 
 #### some utility functions. ###################################################
 
@@ -227,8 +234,10 @@ def write_log(outname, args, program):
     """
     Writes summary of fluidigm2purc run.
     Prints taxa and loci retained after filtering.
+    Prints average probability of sequencing error per locus.
     """
     logfile = open(outname+".log", 'w')
+    locus_errfile = open(outname+"-locus-err.txt", 'w')
     print(__header__, file=logfile)
     print("Command line call:\n  ", end='', file=logfile)
     for a in args:
@@ -241,6 +250,21 @@ def write_log(outname, args, program):
         print("\nLoci retained:\n", end='', file=logfile)
         for l in loci:
             print("  ", l, file=logfile)
+
+    for k in per_locus_error.keys():
+        print(k, mean(per_locus_error[k]), sep='\t', file=locus_errfile)
+
+def mean(numbers):
+    """
+    Caclulate the main of a list.
+    """
+    return float(sum(numbers)) / max(len(numbers), 1)
+
+def convert_phred(phred_string):
+    """
+    Convert a string of PHRED qulity scores to probabilities and take the mean.
+    """
+    return mean([PHRED[s] for s in phred_string])
 
 #### main functions. ###########################################################
 

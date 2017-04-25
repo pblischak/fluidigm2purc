@@ -36,4 +36,7 @@ clean :
 	@rm -rf deps
 
 test :
-	@cd tests; fluidigm2purc -f TEST
+	@sickle pe --help
+	@flash2 --help
+	@fluidigm2purc -h
+	@crunch_clusters -h
