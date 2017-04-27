@@ -9,7 +9,8 @@ import argparse
 from Bio import SeqIO
 import numpy as np
 import pandas as pd
-import scipy.stats as stat
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import operator
 import math
 import sys
@@ -48,13 +49,7 @@ def resolve_haps(ploidy, num_alleles):
     assert num_alleles <= ploidy
     return [i for i in partition(ploidy) if len(i) == num_alleles]
 
-def log_lik(sizes, ploidy, error):
-    """
-    Get the maximum likelihood haplotype configuration based on
-    the multinomial pmf for cluster counts. Uses ploidy information
-    if it is available. Otherwise, it uses a relative cutoff based
-    on the distribution of cluster sizes.
-    """
+def haps_llik_with_ploidy(sizes, ploidy, error):
     lliks = {}
     for a in range (1,len(sizes)+1):
         haplotypes = resolve_haps(len(sizes), a)
@@ -66,12 +61,40 @@ def log_lik(sizes, ploidy, error):
                 lliks[h] +=  sizes[e][1] * math.log(error)
     return lliks
 
-def crunch_clusters(fasta, species_df, method):
+def haps_llik_no_ploidy(sizes, error):
+    llik = {}
+    n = sum([sizes[i][1] for i in range(0, len(sizes))])
+    for a in range(0, len(sizes)+1):
+        llik[a] = 0.0
+        llik[a] += sum([math.log(1 - error) * sizes[h][1] for h in range(0,a)])
+        llik[a] += sum([math.log(error) * sizes[e][1] for e in range(a, len(sizes))])
+    return llik
+
+#def log_lik(sizes, ploidy, error):
+#    """
+#    Get the maximum likelihood haplotype configuration based on
+#    the multinomial pmf for cluster counts. Uses ploidy information
+#    if it is available. Otherwise, it uses a relative cutoff based
+#    on the distribution of cluster sizes.
+#    """
+#    lliks = {}
+#    for a in range (1,len(sizes)+1):
+#        haplotypes = resolve_haps(len(sizes), a)
+#        for h in haplotypes:
+#            lliks[h] = 0.0
+#            for g in range(0,len(h)):
+#                lliks[h] += sizes[g][1] * math.log(h[g] / ploidy)
+#            for e in range(len(h), len(sizes)):
+#                lliks[h] +=  sizes[e][1] * math.log(error)
+#    return lliks
+
+def crunch_clusters(fasta, species_df, error):
     """
 
     """
     idx = SeqIO.index(fasta, "fasta")
     headers = [i for i in idx.keys()]
+    taxon_table = pd.read_csv(species_df, sep='\t')
     taxon_set = set([i.split("_")[0] for i in idx.keys()])
 
     outfile = open("test.fasta", 'w')
@@ -79,13 +102,18 @@ def crunch_clusters(fasta, species_df, method):
         clusters = [m.group(0) for h in headers for m in [re.match(t+".*", h)] if m]
         sizes = {s: int(s.split(";")[1].split("=")[1]) for s in clusters}
         sorted_sizes = sorted(sizes.items(), key=operator.itemgetter(1), reverse=True)
-        # Catch the case when # of clusters is less than ploidy
-        if len(sorted_sizes) >= ploidy:
-            ll = log_lik(sorted_sizes[0:ploidy], ploidy)
-        else:
-            ll = log_lik(sorted_sizes, ploidy)
+        if taxon_table[t].Ploidy != None:
+            # Catch the case when # of clusters is less than ploidy
+            if len(sorted_sizes) >= ploidy:
+                ll = haps_llik_with_ploidy(sorted_sizes[0:ploidy], ploidy, error)
+            else:
+                ll = haps_llik_with_ploidy(sorted_sizes, ploidy, error)
             mle = sorted(ll.items(), key=operator.itemgetter(1), reverse=True)
-            #print(list(mle[0][0]))
+        else:
+            ll = haps_llik_no_ploidy(sorted_sizes[0:ploidy], error)
+            mle = id_alleles(ll)
+
+
         for m in range(0, len(mle[0][0])):
             allele_num = 1
             for rep in range(0, mle[0][0][m]):
@@ -93,28 +121,43 @@ def crunch_clusters(fasta, species_df, method):
                 print(str(idx[sorted_sizes[m][0]].seq), file=outfile)
                 allele_num += 1
 
+def _plot_ll(ll, style="seaborn"):
+    """
+    Plot the log likelihood values return by haps_llik_with_ploidy
+    or haps_llik_no_ploidy. Expects a dictionary as input. Only useful
+    if you are running things interactively.
+    """
+    plt.style.use(style)
+    fig = plt.figure()
+    plt.plot(ll.keys(), ll.values(), '*-')
+    plt.show()
+
 def main():
     parser = argparse.ArgumentParser(description="Options for crunch_clusters",
                                      add_help=True)
+    parser.add_argument('-v', '--version', action="version",
+                        version=__version__)
 
     required = parser.add_argument_group("required arguments")
     required.add_argument('-f', '--fasta', action="store", type=str, required=True,
                           metavar='\b', help="FASTA file with sequenc clusters")
     required.add_argument('-s', '--species_df', action="store", type=str, required=True,
                           metavar='\b', help="Data frame with taxon metadata")
+    required.add_argument('-e', '--error_rates', action="store", type=str, required=True,
+                          metavar='\b', help="Per locus error rates.")
 
-    additional = parser.add_argument_group("additional arguments")
-    additional.add_argument('-m', '--method', action="store", type=str, default="mle", choices=["mle", "relative"],
-                            metavar='\b', help="method for allele calling [default=mle]")
+#    additional = parser.add_argument_group("additional arguments")
+#    additional.add_argument('-m', '--method', action="store", type=str, default="mle", choices=["mle", "relative"],
+#                            metavar='\b', help="method for allele calling [default=mle]")
 
     args       = parser.parse_args()
     fasta      = args.fasta
     species_df = args.species_df
-    method     = args.method
+    error      = args.error_rates
 
+    print("\n", __header__, sep='')
 
-
-    crunch_clusters(fasta, species_df, method)
+    crunch_clusters(fasta, species_df, error)
 
 if __name__ == "__main__":
     """

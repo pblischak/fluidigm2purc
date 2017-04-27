@@ -5,7 +5,11 @@
 # Written by PD Blischak
 
 from __future__ import print_function
-import subprocess as sps
+
+try:
+    import subprocess32 as sps
+except ImportError:
+    import subprocess as sps
 from Bio.Seq import Seq
 import sys
 import os
