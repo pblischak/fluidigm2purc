@@ -15,15 +15,15 @@ Requirements
    -  matplotlib
 
 -  C, C++ compilers
--  `PURC <https://bitbucket.org/crothfels/purc>`__
+-  `PURC <https://bitbucket.org/crothfels/purc>`_
 
 Installation
 ------------
 
 .. code:: bash
 
-    git clone https://github.com/pblischak/fluidigm+puc.git
-    cd fluidigm+purc
+    git clone https://github.com/pblischak/fluidigm2puc.git
+    cd fluidigm2purc
     make
     sudo make install
 

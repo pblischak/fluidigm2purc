@@ -13,6 +13,9 @@ Documentation
    :maxdepth: 1
 
    getting_started.rst
+   fluidigm2purc.rst
+   running_purc.rst
+   crunching_clusters.rst
    haplotyping.rst
 
 Tutorials
