@@ -6,6 +6,7 @@
 
 from __future__ import print_function
 import subprocess as sps
+from Bio.Seq import Seq
 import sys
 import os
 import argparse
@@ -210,7 +211,8 @@ def PURCify_fastq(outname, gz):
             read_counter += 1
             prev_locus = info1[-1]
         elif line_counter == 2:
-            print(line1.strip(), "NNNNNNNN", line2.strip(), file=locus_outfiles[prev_locus], sep='')
+            seq = Seq(line2.strip())
+            print(line1.strip(), "NNNNNNNN", seq.reverse_complement(), file=locus_outfiles[prev_locus], sep='')
             line_counter = 3
         elif line_counter == 3:
             line_counter = 4
