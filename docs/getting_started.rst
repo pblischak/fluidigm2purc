@@ -7,11 +7,18 @@ Requirements
 ------------
 
 -  Python
--  C++ compiler
--  `PURC <https://bitbucket.org/crothfels/purc>`_
+-  Python modules:
+
+   -  numpy
+   -  pandas
+   -  biopython
+   -  matplotlib
+
+-  C, C++ compilers
+-  `PURC <https://bitbucket.org/crothfels/purc>`__
 
 Installation
-============
+------------
 
 .. code:: bash
 
