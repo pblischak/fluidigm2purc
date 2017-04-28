@@ -1,14 +1,14 @@
 [![Build Status](https://travis-ci.org/pblischak/fluidigm2purc.svg?branch=master)](https://travis-ci.org/pblischak/fluidigm2purc) [![Documentation Status](https://readthedocs.org/projects/fluidigm2purc/badge/?version=latest)](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest)
 
-## `fluidigm2purc`: processing of paired-end Fluidigm data for analysis with `PURC`
+## **fluidigm2purc**: processing of paired-end Fluidigm data for analysis with PURC
 
-### [**Read the Docs**](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest)
+## [**Read the Docs**](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest)
 
 ### Quick Introduction
 
-To obtain and install `fluidigm2purc` and its dependencies
-([`Sickle`](https://github.com/najoshi/sickle),
-[`FLASH2`](https://github.com/dstreett/FLASH2)),
+To obtain and install fluidigm2purc and its dependencies
+([Sickle](https://github.com/najoshi/sickle),
+[FLASH2](https://github.com/dstreett/FLASH2)),
 run the following commands in a terminal:
 
 ```bash
@@ -18,17 +18,11 @@ make
 sudo make install
 ```
 
-The Makefile will clone all of the dependencies from GitHub and will compile
-them from source into a folder called `deps/`. You'll need to have C and C++ compilers
-to do this. Typing `sudo make install` will copy
-`fluidigm2purc` and all of the dependencies to `/usr/local/bin` so that you can
-run everything from anywhere on your computer.
+A standard run for fluidigm2purc will filter and trim reads with Sickle, merge
+reads with FLASH2, and then process the resulting FASTQ files into FASTA files
+with sequence headers compatible with PURC ("PURCifying").
 
-A standard run for `fluidigm2purc` will filter and trim reads with `Sickle`, merge
-reads with `FLASH2`, and then process the resulting FASTQ files into FASTA files
-with sequence headers compatible with `PURC` ("PURCifying").
-
-### Running `fluidigm2purc`
+### Running fluidigm2purc
 
 This list of options can be viewed by typing `fluidigm2purc -h`. The only mandatory
 option is the prefix for the paired-end FASTQ files (e.g., 'FluidigmData' for the files
@@ -50,4 +44,4 @@ fluidigm2purc -f FluidigmData -p PURCify
 ```
 
 Additional options can be specified to control parameters for file output,
-multithreading, and trimming/merging reads (see docs).
+multithreading, and trimming/merging reads (see [Docs](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest)).

@@ -27,7 +27,8 @@ Installation
     make
     sudo make install
 
-The ``make`` command will clone Sickle and FLASH2 from GitHub and will attempt
-to compile them. Running ``sudo make install`` will copy everything to
-``/usr/local/bin`` so that the scripts and executables can be run from anywhere
-on your machine.
+The Makefile will clone Sickle and FLASH2 from GitHub and will compile
+them from source into a folder called ``deps/``. You'll need to have C and C++ compilers
+to do this. Typing ``sudo make install`` will copy the fluidigm2purc scripts
+and all of the dependencies to ``/usr/local/bin`` so that you can
+run everything from anywhere on your computer.

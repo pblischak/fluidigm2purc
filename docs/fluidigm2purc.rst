@@ -18,7 +18,10 @@ Each of the steps listed above can be run individually as well. That way, if you
 want to rerun one of the step with different setting, you don't have to start from
 scratch. A particular step can be specified using the ``-p`` flag and the name
 of the step you want to run (``sickle``, ``flash2``, ``PURCify``). By default,
-the script will run all three steps (``all``).
+the script will run all three steps (``all``). The only mandatory
+option is the prefix for the paired-end FASTQ files (e.g., 'FluidigmData' for the files
+FluidigmData_R1.fastq.gz and FluidigmData_R2.fastq.gz), which is given using the
+``-f`` flag.
 
 .. code:: bash
 
@@ -51,4 +54,4 @@ have spaces in them.** The code splits on spaces first, then on colons (":") so 
 grab the taxon and locus names (this is specific to the way the Fluidigm data are processed
 by dbcAmplicons). Merged reads from FLASH2 are processed first.
 Unmerged reads are then read in together and are
-artificially combined with eight n's in between ("NNNNNNNN").
+artificially combined with eight N's in between ("NNNNNNNN").

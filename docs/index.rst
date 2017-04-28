@@ -9,7 +9,7 @@ fluidigm2purc
 |Build Status| |Documentation|
 
 **fluidigm2purc** is a set of Python scripts for processing paired-end Illumina data
-generated using the Fluidigm platform for microfluidic PCR and sequenced on a MiSeq.
+generated using the Fluidigm platform for microfluidic PCR.
 
 Documentation
 -------------
