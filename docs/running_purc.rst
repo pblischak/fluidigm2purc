@@ -18,5 +18,5 @@ of what this would look like if you are running things on a Unix-flavored comput
     for f in *.fasta
     do
         purc_recluster.py -f $f -o PURC_OUTDIR \
-                          -c 0.95 0.975 0.99 0.995 -s 2 5 --clean
+                          -c 0.975 0.99 0.995 0.997 -s 2 5 --clean
     done
