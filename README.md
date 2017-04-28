@@ -1,8 +1,6 @@
 [![Build Status](https://travis-ci.org/pblischak/fluidigm2purc.svg?branch=master)](https://travis-ci.org/pblischak/fluidigm2purc) [![Documentation Status](https://readthedocs.org/projects/fluidigm2purc/badge/?version=latest)](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest)
 
-## `fluidigm2purc`
-
-**Processing of paired-end Fluidigm data for analysis with `PURC`**
+## `fluidigm2purc`: processing of paired-end Fluidigm data for analysis with `PURC`
 
 ### [**Read the Docs**](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest)
 
@@ -35,10 +33,10 @@ with sequence headers compatible with `PURC` ("PURCifying").
 This list of options can be viewed by typing `fluidigm2purc -h`. The only mandatory
 option is the prefix for the paired-end FASTQ files (e.g., 'FluidigmData' for the files
 FluidigmData_R1.fastq.gz and FluidigmData_R2.fastq.gz). Each step can be run individually
-as well by specifying the name of the step with the `-f` flag.
+as well by specifying the name of the step with the `-p` flag.
 
 ```bash
-# By default, the script will run all three steps (i.e., --program all)
+# By default, the script will run all three steps (i.e., -p all)
 fluidigm2purc -f FluidigmData
 
 # To only run Sickle
