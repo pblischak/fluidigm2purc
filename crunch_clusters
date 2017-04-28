@@ -15,6 +15,7 @@ import operator
 import math
 import sys
 import re
+import os
 
 #### header and version info. ##################################################
 
@@ -50,6 +51,9 @@ def resolve_haps(ploidy, num_alleles):
     return [i for i in partition(ploidy) if len(i) == num_alleles]
 
 def haps_llik_with_ploidy(sizes, ploidy, error):
+    """
+
+    """
     lliks = {}
     for a in range (1,len(sizes)+1):
         haplotypes = resolve_haps(len(sizes), a)
@@ -62,6 +66,9 @@ def haps_llik_with_ploidy(sizes, ploidy, error):
     return lliks
 
 def haps_llik_no_ploidy(sizes, error):
+    """
+
+    """
     llik = {}
     n = sum([sizes[i][1] for i in range(0, len(sizes))])
     for a in range(0, len(sizes)+1):
@@ -69,6 +76,22 @@ def haps_llik_no_ploidy(sizes, error):
         llik[a] += sum([math.log(1 - error) * sizes[h][1] for h in range(0,a)])
         llik[a] += sum([math.log(error) * sizes[e][1] for e in range(a, len(sizes))])
     return llik
+
+def id_alleles(lliks, cutoff):
+    """
+    Use the log likelihoods for the alleles that are id'd by the haps_llik_no_ploidy
+    functions.
+    """
+    y = np.array(lliks.values())
+    delta_ll = y[len(y)-1] - y[0]
+    ll_ratio = {i: (y[i+1] - y[i]) / delta_ll for i in range(0, len(y)-1)}
+    num_alleles = 0
+    for k in ll_ratio:
+        if lliks[k] > cutoff:
+            num_alleles = k
+        else:
+            break
+    return (num_alleles, ll_ratio)
 
 #def log_lik(sizes, ploidy, error):
 #    """
@@ -88,38 +111,51 @@ def haps_llik_no_ploidy(sizes, error):
 #                lliks[h] +=  sizes[e][1] * math.log(error)
 #    return lliks
 
-def crunch_clusters(fasta, species_df, error):
+def crunch_clusters(fasta, species, error, locus, cutoff):
     """
 
     """
     idx = SeqIO.index(fasta, "fasta")
     headers = [i for i in idx.keys()]
-    taxon_table = pd.read_csv(species_df, sep='\t')
-    taxon_set = set([i.split("_")[0] for i in idx.keys()])
+    outfile = open(locus+".fasta", 'w')
+    taxon_df = pd.read_csv(species, sep='\t')
+    method=""
 
-    outfile = open("test.fasta", 'w')
-    for t in list(taxon_set):
+    for t in list(taxon_df.Taxon):
         clusters = [m.group(0) for h in headers for m in [re.match(t+".*", h)] if m]
         sizes = {s: int(s.split(";")[1].split("=")[1]) for s in clusters}
         sorted_sizes = sorted(sizes.items(), key=operator.itemgetter(1), reverse=True)
-        if taxon_table[t].Ploidy != None:
+        if int(taxon_df.loc[taxon_df.Taxon == t].Ploidy) >= 1:
             # Catch the case when # of clusters is less than ploidy
+            method="mle"
             if len(sorted_sizes) >= ploidy:
                 ll = haps_llik_with_ploidy(sorted_sizes[0:ploidy], ploidy, error)
             else:
                 ll = haps_llik_with_ploidy(sorted_sizes, ploidy, error)
             mle = sorted(ll.items(), key=operator.itemgetter(1), reverse=True)
-        else:
+        elif str(taxon_df.loc[taxon_df.Taxon == t].Ploidy) == "None":
+            method="ranked"
             ll = haps_llik_no_ploidy(sorted_sizes[0:ploidy], error)
-            mle = id_alleles(ll)
+            num_alleles, ll_diffs = id_alleles(ll, cutoff)
+        else:
+            print("\n  ** WARNING: Haplotyping for individual", t, "was unsuccessful. **\n")
+            next
 
-
-        for m in range(0, len(mle[0][0])):
+        if method == "mle":
+            for m in range(0, len(mle[0][0])):
+                allele_num = 1
+                for rep in range(0, mle[0][0][m]):
+                    print(">"+str(idx[sorted_sizes[m][0]].id)+"A_"+str(allele_num), file=outfile)
+                    print(str(idx[sorted_sizes[m][0]].seq), file=outfile)
+                    allele_num += 1
+        elif method == "ranked":
             allele_num = 1
-            for rep in range(0, mle[0][0][m]):
-                print(">"+str(idx[sorted_sizes[m][0]].id)+"A_"+str(allele_num), file=outfile)
-                print(str(idx[sorted_sizes[m][0]].seq), file=outfile)
+            for a in range(0, num_alleles):
+                print(">"+str(idx[sorted_sizes[a][0]].id)+"A_"+str(allele_num), file=outfile)
+                print(str(idx[sorted_sizes[a][0]].seq), file=outfile)
                 allele_num += 1
+        else:
+            pass
 
 def _plot_ll(ll, style="seaborn"):
     """
@@ -139,25 +175,31 @@ def main():
                         version=__version__)
 
     required = parser.add_argument_group("required arguments")
-    required.add_argument('-f', '--fasta', action="store", type=str, required=True,
-                          metavar='\b', help="FASTA file with sequenc clusters")
-    required.add_argument('-s', '--species_df', action="store", type=str, required=True,
+    required.add_argument('-f', '--fasta_dir', action="store", type=str, required=True,
+                          metavar='\b', help="Directory of FASTA files with sequence clusters")
+    required.add_argument('-s', '--species_table', action="store", type=str, required=True,
                           metavar='\b', help="Data frame with taxon metadata")
     required.add_argument('-e', '--error_rates', action="store", type=str, required=True,
                           metavar='\b', help="Per locus error rates.")
 
-#    additional = parser.add_argument_group("additional arguments")
-#    additional.add_argument('-m', '--method', action="store", type=str, default="mle", choices=["mle", "relative"],
-#                            metavar='\b', help="method for allele calling [default=mle]")
+    additional = parser.add_argument_group("additional arguments")
+    additional.add_argument('-c', '--cutoff', action="store", type=float, default=0.05,
+                            metavar='\b', help="cutoff for allele determination [default=0.05]")
 
     args       = parser.parse_args()
-    fasta      = args.fasta
-    species_df = args.species_df
+    fasta_dir  = args.fasta_dir
+    species    = args.species_table
     error      = args.error_rates
+    cutoff     = args.cutoff
 
     print("\n", __header__, sep='')
 
-    crunch_clusters(fasta, species_df, error)
+    error_df = pd.read_csv(error, sep='\t')
+
+    for l in error.Locus:
+        err = float(error_df.loc[error_df.Locus == l].Error)
+        crunch_clusters("./"+fasta_dir+"/"+l+"_clustered_reconsensus.fa", \
+                        species, err, l, cutoff)
 
 if __name__ == "__main__":
     """
