@@ -244,6 +244,7 @@ def write_log(outname, args, program):
     """
     logfile = open(outname+".log", 'w')
     locus_errfile = open(outname+"-locus-err.txt", 'w')
+    taxon_ploidyfile = open(outname+"-taxon-table.txt", 'w')
     print(__header__, file=logfile)
     print("Command line call:\n  ", end='', file=logfile)
     for a in args:
@@ -257,8 +258,13 @@ def write_log(outname, args, program):
         for l in loci:
             print("  ", l, file=logfile)
 
+    print("Locus", "Error", sep='\t', file=locus_errfile)
     for k in per_locus_error.keys():
         print(k, mean(per_locus_error[k]), sep='\t', file=locus_errfile)
+
+    print("Taxon", "Ploidy", sep="\t", file=taxon_ploidyfile)
+    for t in taxa:
+        print(t, "None", sep="\t", file=taxon_ploidyfile)
 
 def mean(numbers):
     """
