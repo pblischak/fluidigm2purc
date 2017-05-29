@@ -19,7 +19,7 @@ import itertools
 
 #### header and version info. ##################################################
 
-__version__ = "This is fluidigm2purc v0.1.0-alpha (April 2017)."
+__version__ = "This is fluidigm2purc v0.1.0-alpha (May 2017)."
 
 __header__ = """**********************************************
 fluidigm2purc (v0.1.0-alpha)
@@ -30,6 +30,7 @@ Fluidigm platform for input to PURC.
 """
 
 #### PHRED conversion dictionary. ##############################################
+
 PHRED = {'!': 1.00, '"': 0.79433, '#': 0.63096, '$': 0.50119, '%': 0.39811,
          '&': 0.31623, '\'': 0.25119, '(': 0.19953, ')': 0.15849, '*': 0.12589,
          '+': 0.10000, ',': 0.07943, '-': 0.06310, '.': 0.05012, '/': 0.03981,
@@ -280,7 +281,7 @@ def convert_phred(phred_string):
 
 #### main functions. ###########################################################
 
-def main():
+def _main():
     """
     Main function for fluidigm2purc.
 
@@ -347,4 +348,4 @@ if __name__ == "__main__":
     """
     Run the main function when called from command line.
     """
-    main()
+    _main()

@@ -19,7 +19,7 @@ import os
 
 #### header and version info. ##################################################
 
-__version__ = "This is crunch_clusters v0.1.0-alpha (April 2017)."
+__version__ = "This is crunch_clusters v0.1.0-alpha (May 2017)."
 
 __header__ = """**********************************************
 crunch_clusters (v0.1.0-alpha)
@@ -33,7 +33,7 @@ configurations.
 # Stack Overflow saves the day again
 def partition(number):
     """
-    Gives the full list of partitions for and integer n.
+    Gives the full list of partitions for an integer n.
     """
     answer = set()
     answer.add((number, ))
@@ -52,11 +52,15 @@ def resolve_haps(ploidy, num_alleles):
 
 def haps_llik_with_ploidy(sizes, ploidy, error):
     """
-
+    Calculate the multinomial likelihood of observing a particular haplotype
+    configuration if ploidy information is given in the taxon table.
     """
     lliks = {}
     for a in range (1,len(sizes)+1):
-        haplotypes = resolve_haps(len(sizes), a)
+        if len(sizes) == ploidy:
+            haplotypes = resolve_haps(len(sizes), a)
+        else:
+            haplotypes = resolve_haps(ploidy, a)
         for h in haplotypes:
             lliks[h] = 0.0
             for g in range(0,len(h)):
@@ -67,7 +71,8 @@ def haps_llik_with_ploidy(sizes, ploidy, error):
 
 def haps_llik_no_ploidy(sizes, error):
     """
-
+    Calculate the likelihood of a haplotype being "real" vs. sequencing error.
+    Used when we don't have ploidy level information.
     """
     llik = {}
     n = sum([sizes[i][1] for i in range(0, len(sizes))])
@@ -80,80 +85,133 @@ def haps_llik_no_ploidy(sizes, error):
 def id_alleles(lliks, cutoff):
     """
     Use the log likelihoods for the alleles that are id'd by the haps_llik_no_ploidy
-    functions.
+    functions. We use a cutoff here that treats alleles as being errors if they do
+    not increase the likelihood by the specified amount (default = 0.05).
     """
     y = np.array(lliks.values())
     delta_ll = y[len(y)-1] - y[0]
     ll_ratio = {i: (y[i+1] - y[i]) / delta_ll for i in range(0, len(y)-1)}
+    print(ll_ratio)
     num_alleles = 0
-    for k in ll_ratio:
-        if lliks[k] > cutoff:
-            num_alleles = k
+    for k,v in ll_ratio.items():
+        if v > cutoff:
+            num_alleles +=1
         else:
             break
     return (num_alleles, ll_ratio)
 
-#def log_lik(sizes, ploidy, error):
-#    """
-#    Get the maximum likelihood haplotype configuration based on
-#    the multinomial pmf for cluster counts. Uses ploidy information
-#    if it is available. Otherwise, it uses a relative cutoff based
-#    on the distribution of cluster sizes.
-#    """
-#    lliks = {}
-#    for a in range (1,len(sizes)+1):
-#        haplotypes = resolve_haps(len(sizes), a)
-#        for h in haplotypes:
-#            lliks[h] = 0.0
-#            for g in range(0,len(h)):
-#                lliks[h] += sizes[g][1] * math.log(h[g] / ploidy)
-#            for e in range(len(h), len(sizes)):
-#                lliks[h] +=  sizes[e][1] * math.log(error)
-#    return lliks
-
-def crunch_clusters(fasta, species, error, locus, cutoff):
+def combine_matching_seqs(clusts, fasta_idx):
     """
+    Compares all clusters for an individual to determine which sequences are
+    actually identical when we don't include gaps. Gaps can occur because of
+    read trimming from Sickle and from unmerged reads from FLASH2. Matching
+    clusters sizes are combined and a list of matching clusters is kept.
 
+    Note: There are two trade-offs here. (1) We could ignore combining things
+    and treat all clusters as being unique. However, we might miss a true cluster
+    due to not combining it with its gappy counterpart. (2) We may be combining
+    things that aren't truly identical. There is no way to know if this is
+    what is happening.
+    """
+    matches_dict = {}       # dictionary for storing matched sequences (gets returned by func)
+    matches = []            # keeps track of current matches
+    already_matched = []    # keeps track of seqs that matched to prevent checking again
+    for i in range(len(clusts)):
+        if clusts[i] in already_matched:
+            #print(clusts[i], "already matched.", sep=' ')
+            continue
+        seq_one = fasta_idx[clusts[i]].seq
+        seq_one_size = int(clusts[i].split(';')[1].split("=")[1])
+        total_size = seq_one_size
+        matches = [clusts[i]]
+        header_one = clusts[i].split(';')[0]
+        for j in range(i+1, len(clusts)):
+            match=True   # starts as True, set to False if they don't match
+            seq_two = fasta_idx[clusts[j]].seq
+            seq_two_size = int(clusts[j].split(';')[1].split("=")[1])
+            assert len(seq_one) == len(seq_two)
+            for s in range(len(seq_one)):
+                if seq_one[s] == '-' or seq_two[s] == '-':
+                    continue
+                elif seq_one[s] != seq_two[s]:
+                    #print(clusts[i], clusts[j], s+1, seq_one[s], seq_two[s])
+                    match = False
+                    break
+                else:
+                    continue
+            if match:
+                total_size += seq_two_size
+                matches.append(clusts[j])
+                already_matched.append(clusts[j])
+            else:
+                pass
+        matches_dict[header_one + ";size=" + str(total_size) + ";"] = matches
+    return matches_dict
+
+def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
+    """
+    The workhorse function that processes the input fasta file and dtermines
+    haplotype configurations based on whether or not ploid levels are specified.
+    A flag for treating the locus as haploid can be specified so that only the
+    primary cluster is kept.
     """
     idx = SeqIO.index(fasta, "fasta")
     headers = [i for i in idx.keys()]
-    outfile = open(locus+".fasta", 'w')
+    outfile = open(locus+"_crunched_clusters.fasta", 'w')
     taxon_df = pd.read_csv(species, sep='\t')
     method=""
 
     for t in list(taxon_df.Taxon):
         clusters = [m.group(0) for h in headers for m in [re.match(t+".*", h)] if m]
-        sizes = {s: int(s.split(";")[1].split("=")[1]) for s in clusters}
+        unique_clusters = combine_matching_seqs(clusters, idx)
+        sizes = {s: int(s.split(";")[1].split("=")[1]) for s in unique_clusters.keys()}
         sorted_sizes = sorted(sizes.items(), key=operator.itemgetter(1), reverse=True)
-        if int(taxon_df.loc[taxon_df.Taxon == t].Ploidy) >= 1:
+        if haploid:
+            method = "haploid"
+            header = unique_clusters[sorted_sizes[0][0]][0].split("_")[0]
+            print(">"+header+";haploid", file=outfile)
+            print(str(idx[unique_clusters[sorted_sizes[0][0]][0]].seq), file=outfile)
+            #ll = haps_llik_with_ploidy(sorted_sizes[0], 1, error)
+            #mle = sorted(ll.items(), key=operator.itemgetter(1), reverse=True)
+        elif str(taxon_df.loc[taxon_df.Taxon == t].Ploidy.values[0]) == "None":
+            method="ranked"
+            ll = haps_llik_no_ploidy(sorted_sizes, error)
+            num_alleles, ll_diffs = id_alleles(ll, cutoff)
+        elif str(taxon_df.loc[taxon_df.Taxon == t].Ploidy.values[0]) != "None":
             # Catch the case when # of clusters is less than ploidy
+            try:
+                ploidy = int(taxon_df.loc[taxon_df.Taxon == t].Ploidy.values[0])
+            except ValueError:
+                print("\n  ** WARNING: Haplotyping for individual", t, "was unsuccessful (bad ploidy in OTU table). **")
+                continue
             method="mle"
             if len(sorted_sizes) >= ploidy:
                 ll = haps_llik_with_ploidy(sorted_sizes[0:ploidy], ploidy, error)
             else:
                 ll = haps_llik_with_ploidy(sorted_sizes, ploidy, error)
             mle = sorted(ll.items(), key=operator.itemgetter(1), reverse=True)
-        elif str(taxon_df.loc[taxon_df.Taxon == t].Ploidy) == "None":
-            method="ranked"
-            ll = haps_llik_no_ploidy(sorted_sizes[0:ploidy], error)
-            num_alleles, ll_diffs = id_alleles(ll, cutoff)
         else:
             print("\n  ** WARNING: Haplotyping for individual", t, "was unsuccessful. **\n")
             next
 
         if method == "mle":
+            allele_num = 1
             for m in range(0, len(mle[0][0])):
-                allele_num = 1
                 for rep in range(0, mle[0][0][m]):
-                    print(">"+str(idx[sorted_sizes[m][0]].id)+"A_"+str(allele_num), file=outfile)
-                    print(str(idx[sorted_sizes[m][0]].seq), file=outfile)
+                    header = unique_clusters[sorted_sizes[m][0]][0].split("_")[0]
+                    print(">"+header+";haplotype"+str(allele_num), file=outfile)
+                    #print(">"+str(idx[unique_clusters[sorted_sizes[m][0]][0]].id)+"A_"+str(allele_num), file=outfile)
+                    print(str(idx[unique_clusters[sorted_sizes[m][0]][0]].seq), file=outfile)
                     allele_num += 1
         elif method == "ranked":
             allele_num = 1
             for a in range(0, num_alleles):
-                print(">"+str(idx[sorted_sizes[a][0]].id)+"A_"+str(allele_num), file=outfile)
-                print(str(idx[sorted_sizes[a][0]].seq), file=outfile)
+                header = unique_clusters[sorted_sizes[a][0]][0].split("_")[0]
+                print(">"+header+";haplotype"+str(allele_num) + "_1", file=outfile)
+                print(str(idx[unique_clusters[sorted_sizes[a][0]][0]].seq), file=outfile)
                 allele_num += 1
+        elif method == "haploid":
+            continue
         else:
             pass
 
@@ -168,41 +226,48 @@ def _plot_ll(ll, style="seaborn"):
     plt.plot(ll.keys(), ll.values(), '*-')
     plt.show()
 
-def main():
+def _main():
+    """
+    Setup of command line arguments to pass to the crunch_clusters function to
+    analyze clusters from PURC and determine haplotype configurations.
+    """
     parser = argparse.ArgumentParser(description="Options for crunch_clusters",
                                      add_help=True)
     parser.add_argument('-v', '--version', action="version",
                         version=__version__)
 
     required = parser.add_argument_group("required arguments")
-    required.add_argument('-f', '--fasta_dir', action="store", type=str, required=True,
-                          metavar='\b', help="Directory of FASTA files with sequence clusters")
+    required.add_argument('-i', '--input_fasta', action="store", type=str, required=True,
+                          metavar='\b', help="Input FASTA file with sequence clusters")
     required.add_argument('-s', '--species_table', action="store", type=str, required=True,
                           metavar='\b', help="Data frame with taxon metadata")
     required.add_argument('-e', '--error_rates', action="store", type=str, required=True,
                           metavar='\b', help="Per locus error rates.")
+    required.add_argument('-l', '--locus_name', action="store", type=str, required=True,
+                          metavar='\b', help="Name of locus being analyzed (must match name in error rates table)")
 
     additional = parser.add_argument_group("additional arguments")
     additional.add_argument('-c', '--cutoff', action="store", type=float, default=0.05,
                             metavar='\b', help="cutoff for allele determination [default=0.05]")
+    additional.add_argument('-hap', '--haploid', action="store_true", default=False,
+                            help="Flag to treat locus as haploid (e.g., for cpDNA loci)")
 
-    args       = parser.parse_args()
-    fasta_dir  = args.fasta_dir
-    species    = args.species_table
-    error      = args.error_rates
-    cutoff     = args.cutoff
+    args         = parser.parse_args()
+    input_fasta  = args.input_fasta
+    locus        = args.locus_name
+    otu          = args.species_table
+    error        = args.error_rates
+    cutoff       = args.cutoff
+    hap          = args.haploid
 
     print("\n", __header__, sep='')
 
     error_df = pd.read_csv(error, sep='\t')
-
-    for l in error.Locus:
-        err = float(error_df.loc[error_df.Locus == l].Error)
-        crunch_clusters("./"+fasta_dir+"/"+l+"_clustered_reconsensus.fa", \
-                        species, err, l, cutoff)
+    err = float(error_df.loc[error_df.Locus == locus].Error)
+    crunch_clusters(input_fasta, otu, err, locus, cutoff, hap)
 
 if __name__ == "__main__":
     """
-    Run the main sript.
+    Run the main sript when called from the command line.
     """
-    main()
+    _main()
