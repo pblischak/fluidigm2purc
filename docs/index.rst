@@ -28,6 +28,7 @@ Tutorials
 .. toctree::
    :maxdepth: 1
 
+   quick_start.rst
    haplotyping.rst
 
 Indices and tables

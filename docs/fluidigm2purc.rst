@@ -38,7 +38,9 @@ FluidigmData_R1.fastq.gz and FluidigmData_R2.fastq.gz), which is given using the
     fluidigm2purc -f FluidigmData -p PURCify
 
 The final output is a directory named ``<OUTDIR>-FASTA`` that has a single FASTA
-file for each locus that was present in FASTQ files used as input.
+file for each locus that was present in FASTQ files used as input. The ``<OUTDIR>``
+part of the directory will be substituted with whatever is supplied by the ``-o``
+argument (default=output).
 
 PURCifying
 ----------

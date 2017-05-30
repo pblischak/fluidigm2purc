@@ -15,7 +15,7 @@ Requirements
    -  matplotlib
 
 -  C, C++ compilers
--  `PURC <https://bitbucket.org/crothfels/purc>`_ (or `vsearch <https://github.com/torognes/vsearch>`_)
+-  `PURC <https://bitbucket.org/crothfels/purc>`_
 
 Installation
 ------------
