@@ -9,8 +9,6 @@ import argparse
 from Bio import SeqIO
 import numpy as np
 import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import operator
 import math
 import sys
@@ -91,7 +89,6 @@ def id_alleles(lliks, cutoff):
     y = np.array(lliks.values())
     delta_ll = y[len(y)-1] - y[0]
     ll_ratio = {i: (y[i+1] - y[i]) / delta_ll for i in range(0, len(y)-1)}
-    print(ll_ratio)
     num_alleles = 0
     for k,v in ll_ratio.items():
         if v > cutoff:
@@ -157,13 +154,23 @@ def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
     """
     idx = SeqIO.index(fasta, "fasta")
     headers = [i for i in idx.keys()]
-    outfile = open(locus+"_crunched_clusters.fasta", 'w')
+    if not os.path.exists("./"+locus+"_crunched_clusters.fasta"):
+        outfile = open(locus+"_crunched_clusters.fasta", 'w')
+    else:
+        os.rename("./"+locus+"_crunched_clusters.fasta", "./"+locus+"_crunched_clusters_old.fasta")
+        outfile = open(locus+"_crunched_clusters.fasta", 'w')
+    if not os.path.exists("./"+locus+"_log.txt"):
+        logfile = open(locus+"_log.txt", 'a')
+    else:
+        os.rename("./"+locus+"_log.txt", "./"+locus+"_old_log.txt")
+        logfile = open(locus+"_log.txt", 'a')
     taxon_df = pd.read_csv(species, sep='\t')
     method=""
 
     for t in list(taxon_df.Taxon):
         clusters = [m.group(0) for h in headers for m in [re.match(t+".*", h)] if m]
         unique_clusters = combine_matching_seqs(clusters, idx)
+        write_log(t, unique_clusters, logfile) # log clustering info
         sizes = {s: int(s.split(";")[1].split("=")[1]) for s in unique_clusters.keys()}
         sorted_sizes = sorted(sizes.items(), key=operator.itemgetter(1), reverse=True)
         if haploid:
@@ -215,16 +222,14 @@ def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
         else:
             pass
 
-def _plot_ll(ll, style="seaborn"):
+def write_log(taxon, clusters, log):
     """
-    Plot the log likelihood values return by haps_llik_with_ploidy
-    or haps_llik_no_ploidy. Expects a dictionary as input. Only useful
-    if you are running things interactively.
+    Write cluster merging and size info to log file.
     """
-    plt.style.use(style)
-    fig = plt.figure()
-    plt.plot(ll.keys(), ll.values(), '*-')
-    plt.show()
+    print(taxon+":\n", file=log)
+    for k,v in clusters.items():
+        print(k, ":", [i for i in v], file=log)
+    print("\n\n", file=log)
 
 def _main():
     """
