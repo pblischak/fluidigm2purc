@@ -37,9 +37,9 @@ FluidigmData_R1.fastq.gz and FluidigmData_R2.fastq.gz), which is given using the
     # To only run the PURCifying step
     fluidigm2purc -f FluidigmData -p PURCify
 
-The final output is a directory named ``<OUTDIR>-FASTA`` that has a single FASTA
-file for each locus that was present in FASTQ files used as input. The ``<OUTDIR>``
-part of the directory will be substituted with whatever is supplied by the ``-o``
+The final output is a directory named ``output-FASTA`` that has a single FASTA
+file for each locus that was present in FASTQ files used as input. The ``output``
+part of the directory cab be substituted with whatever is supplied by the ``-o``
 argument (default=output).
 
 PURCifying
@@ -57,3 +57,54 @@ grab the taxon and locus names (this is specific to the way the Fluidigm data ar
 by dbcAmplicons). Merged reads from FLASH2 are processed first.
 Unmerged reads are then read in together and are
 artificially combined with eight N's in between ("NNNNNNNN").
+
+Additional outputs
+------------------
+
+``output.log``
+^^^^^^^^^^^^^^
+
+The fluidigm2purc script will output a log file that lists the taxa and loci found
+during the processing of the FASTQ files. It also lists the command line arguments
+that were used to generate the analysis.
+
+``output-taxon-table.txt``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A two-column table listing each taxon and its ploidy level is generated so that
+users can specify what the ploidy level of the sample is when processing the
+clusters output by PURC (see the section on :ref:`cluster crunching <Crunching_Clusters>`).
+By default, all of the ploidy values are set to ``None``.
+
+**Example**:
+
+.. code::
+
+  Taxon    Ploidy
+  taxon1   None
+  taxon2   None
+  .
+  .
+  .
+  taxonN   None
+
+``output-locus-err.txt``
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+fluidigm2purc will also calculate the per locus error rate using the PHRED
+quality scores in the FASTQ files. It does this by calculating the average error
+for each read mapping to a locus, followed by the overall average across reads.
+These error values are used in the :ref:`cluster crunching step <Crunching_Clusters>`
+to determine if a cluster output by PURC is sequencing error or not.
+
+**Example**:
+
+.. code::
+
+  Locus    Error
+  loc1     0.002341729
+  loc2     0.032134829
+  .
+  .
+  .
+  locN     0.000967257
