@@ -14,18 +14,71 @@ import math
 import sys
 import re
 import os
+try:
+    import subprocess32 as sps
+except ImportError:
+    import subprocess as sps
 
 #### header and version info. ##################################################
 
 __version__ = "This is crunch_clusters v0.1.0-alpha (May 2017)."
 
-__header__ = """**********************************************
+__header__ = """\
+**********************************************
 crunch_clusters (v0.1.0-alpha)
 
 Processing of PURC clusters into haplotype
 configurations.
 **********************************************
 """
+
+############################################
+# Functions for calling external executables
+############################################
+
+def rename(input_fasta):
+    """
+    remove semicolons from sequence names and replace with
+    underscores using sed
+    """
+    #print("  Checking for a working version of sed...", end='')
+    #try:
+    #    sps.check_call(['sed', '-h'])
+    #except sps.CalledProcessError:
+    #    sys.exit("\n\n** ERROR: could not execute sed **\n\n")
+    #print("Good\n")
+
+    sed_cmd = [
+        "sed",
+        "-i", ".tmp",
+        "s/\;/\_/g",
+        input_fasta
+    ]
+
+    sps.call(sed_cmd)
+
+def mafft(input_fasta, locus):
+    """
+    Align input fasta file using mafft.
+    """
+
+    print("  Checking Mafft executable...    ", end='')
+    try:
+        sps.check_call(['mafft', '-h'])
+    except sps.CalledProcessError:
+        sys.exit("\n\n** ERROR: could not execute Sickle **\n\n")
+    print("Good\n")
+
+    mafft_cmd = [
+        "mafft",
+        "--auto",
+        input_fasta, ">",
+        locus+"-realigned.fasta"
+    ]
+
+    sps.call(mafft_cmd)
+
+
 
 # http://stackoverflow.com/questions/10035752/elegant-python-code-for-integer-partitioning
 # Stack Overflow saves the day again
@@ -97,7 +150,7 @@ def id_alleles(lliks, cutoff):
             break
     return (num_alleles, ll_ratio)
 
-def combine_matching_seqs(clusts, fasta_idx):
+def combine_matching_seqs(clusts, fasta_idx, taxon):
     """
     Compares all clusters for an individual to determine which sequences are
     actually identical when we don't include gaps. Gaps can occur because of
@@ -118,14 +171,14 @@ def combine_matching_seqs(clusts, fasta_idx):
             #print(clusts[i], "already matched.", sep=' ')
             continue
         seq_one = fasta_idx[clusts[i]].seq
-        seq_one_size = int(clusts[i].split(';')[1].split("=")[1])
+        seq_one_size = int(clusts[i].split('_')[-2].split("=")[1])
         total_size = seq_one_size
         matches = [clusts[i]]
-        header_one = clusts[i].split(';')[0]
+        header_one = clusts[i].split('_')[-3]
         for j in range(i+1, len(clusts)):
             match=True   # starts as True, set to False if they don't match
             seq_two = fasta_idx[clusts[j]].seq
-            seq_two_size = int(clusts[j].split(';')[1].split("=")[1])
+            seq_two_size = int(clusts[j].split('_')[-2].split("=")[1])
             assert len(seq_one) == len(seq_two)
             for s in range(len(seq_one)):
                 if seq_one[s] == '-' or seq_two[s] == '-':
@@ -142,7 +195,7 @@ def combine_matching_seqs(clusts, fasta_idx):
                 already_matched.append(clusts[j])
             else:
                 pass
-        matches_dict[header_one + ";size=" + str(total_size) + ";"] = matches
+        matches_dict[taxon + "_" + header_one + "_size=" + str(total_size) + "_"] = matches
     return matches_dict
 
 def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
@@ -159,24 +212,30 @@ def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
     else:
         os.rename("./"+locus+"_crunched_clusters.fasta", "./"+locus+"_crunched_clusters_old.fasta")
         outfile = open(locus+"_crunched_clusters.fasta", 'w')
+
     if not os.path.exists("./"+locus+"_log.txt"):
         logfile = open(locus+"_log.txt", 'a')
     else:
         os.rename("./"+locus+"_log.txt", "./"+locus+"_old_log.txt")
         logfile = open(locus+"_log.txt", 'a')
-    taxon_df = pd.read_csv(species, sep='\t')
+
+    taxon_df = pd.read_csv(species, delim_whitespace=True)
     method=""
+    empty="_"
 
     for t in list(taxon_df.Taxon):
         clusters = [m.group(0) for h in headers for m in [re.match(t+"_"+".*", h)] if m]
-        unique_clusters = combine_matching_seqs(clusters, idx)
+        if len(clusters) == 0:
+            print("Taxon ", t, "not in current file.", sep='')
+            continue
+        unique_clusters = combine_matching_seqs(clusters, idx, t)
         write_log(t, unique_clusters, logfile) # log clustering info
-        sizes = {s: int(s.split(";")[1].split("=")[1]) for s in unique_clusters.keys()}
+        sizes = {s: int(s.split("_")[-2].split("=")[1]) for s in unique_clusters.keys()}
         sorted_sizes = sorted(sizes.items(), key=operator.itemgetter(1), reverse=True)
         if haploid:
             method = "haploid"
-            header = unique_clusters[sorted_sizes[0][0]][0].split("_")[0]
-            print(">"+header+";haploid", file=outfile)
+            header = unique_clusters[sorted_sizes[0][0]][0].split("_")[0:-3]
+            print(">"+empty.join(header)+"_haploid", file=outfile)
             print(str(idx[unique_clusters[sorted_sizes[0][0]][0]].seq), file=outfile)
             #ll = haps_llik_with_ploidy(sorted_sizes[0], 1, error)
             #mle = sorted(ll.items(), key=operator.itemgetter(1), reverse=True)
@@ -205,16 +264,16 @@ def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
             allele_num = 1
             for m in range(0, len(mle[0][0])):
                 for rep in range(0, mle[0][0][m]):
-                    header = unique_clusters[sorted_sizes[m][0]][0].split("_")[0]
-                    print(">"+header+";haplotype"+str(allele_num), file=outfile)
+                    header = unique_clusters[sorted_sizes[m][0]][0].split("_")[0:-3]
+                    print(">"+empty.join(header)+"_haplotype"+str(allele_num), file=outfile)
                     #print(">"+str(idx[unique_clusters[sorted_sizes[m][0]][0]].id)+"A_"+str(allele_num), file=outfile)
                     print(str(idx[unique_clusters[sorted_sizes[m][0]][0]].seq), file=outfile)
                     allele_num += 1
         elif method == "ranked":
             allele_num = 1
             for a in range(0, num_alleles):
-                header = unique_clusters[sorted_sizes[a][0]][0].split("_")[0]
-                print(">"+header+";haplotype"+str(allele_num) + "_1", file=outfile)
+                header = unique_clusters[sorted_sizes[a][0]][0].split("_")[0:-3]
+                print(">"+empty.join(header)+"_haplotype"+str(allele_num) + "_1", file=outfile)
                 print(str(idx[unique_clusters[sorted_sizes[a][0]][0]].seq), file=outfile)
                 allele_num += 1
         elif method == "haploid":
@@ -255,7 +314,11 @@ def _main():
     additional.add_argument('-c', '--cutoff', action="store", type=float, default=0.05,
                             metavar='\b', help="cutoff for allele determination [default=0.05]")
     additional.add_argument('-hap', '--haploid', action="store_true", default=False,
-                            help="Flag to treat locus as haploid (e.g., for cpDNA loci)")
+                            help="flag to treat locus as haploid (e.g., for cpDNA loci)")
+    additional.add_argument('--realign', action="store_true", default=False,
+                            help="realign sequences using mafft prior to crunching clusters")
+    additional.add_argument('--clean', action="store", type=float, default=-999.9,
+                            metavar='\b', help="clean gappy sequences with phyutility using specified threshold")
 
     args         = parser.parse_args()
     input_fasta  = args.input_fasta
@@ -264,12 +327,43 @@ def _main():
     error        = args.error_rates
     cutoff       = args.cutoff
     hap          = args.haploid
+    realign      = args.realign
+    clean        = args.clean
 
     print("\n", __header__, sep='')
 
-    error_df = pd.read_csv(error, sep='\t')
+    # Check if error file exists
+    error_df = pd.read_csv(error, delim_whitespace=True)
     err = float(error_df.loc[error_df.Locus == locus].Error)
-    crunch_clusters(input_fasta, otu, err, locus, cutoff, hap)
+    rename(input_fasta)
+    clean_seqs = False # logical for sequence cleaning
+
+    # Check if a value for cleaning has been specified and that it is
+    # valid (0.0 < x < 1.0).
+    if clean != -999.9 and clean > 0.0 and clean < 1.0:
+        print("   Cleaning with Phyutility (threashold=", clean, ").", sep='')
+        clean_seqs = True
+    elif clean == -999.9:
+        pass
+    else:
+        print("  Invalid cleaning threashold (", clean, ").", sep='')
+        print("  Must be between 0.0 and 1.0.")
+
+    if realign:
+        print("Realigning sequences with mafft.")
+
+    if clean_seqs and realign:
+        mafft()
+        phyutility()
+        crunch_clusters(locus+"-realigned-cleaned.fasta", otu, err, locus, cutoff, hap)
+    elif clean_seqs and not realign:
+        phyutility()
+        crunch_clusters(locus+"-cleaned.fasta", otu, err, locus, cutoff, hap)
+    elif realign and not clean_seqs:
+        mafft()
+        crunch_clusters(locus+"-realigned.fasta", otu, err, locus, cutoff, hap)
+    else:
+        crunch_clusters(input_fasta,  otu, err, locus, cutoff, hap)
 
 if __name__ == "__main__":
     """
