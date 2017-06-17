@@ -48,6 +48,7 @@ def rename(input_fasta):
     #    sys.exit("\n\n** ERROR: could not execute sed **\n\n")
     #print("Good\n")
 
+    print("  Renaming sequences with sed.")
     sed_cmd = [
         "sed",
         "-i", ".tmp",
@@ -55,30 +56,39 @@ def rename(input_fasta):
         input_fasta
     ]
 
-    sps.call(sed_cmd)
+    proc = sps.call(sed_cmd)
 
 def mafft(input_fasta, locus):
     """
     Align input fasta file using mafft.
     """
 
-    print("  Checking Mafft executable...    ", end='')
-    try:
-        sps.check_call(['mafft', '-h'])
-    except sps.CalledProcessError:
-        sys.exit("\n\n** ERROR: could not execute Sickle **\n\n")
-    print("Good\n")
+    print("  Realigning sequences using Mafft.")
+    #print("  Checking Mafft executable...    ", end='')
+    #try:
+    #    sps.check_call(['mafft', '-h'])
+    #except sps.CalledProcessError:
+    #    sys.exit("\n\n** ERROR: could not execute Mafft **\n\n")
+    #print("Good\n")
 
-    mafft_cmd = [
-        "mafft",
-        "--auto",
-        input_fasta, ">",
-        locus+"-realigned.fasta"
-    ]
+    mafft_cmd = "mafft --auto --quiet "+input_fasta+" > "+locus+"-realigned.fasta",
+        #"--auto",
+        #"--quiet",
+        #input_fasta, ">",
+        #locus+"-realigned.fasta"
+    #]
 
-    sps.call(mafft_cmd)
+    proc = sps.call(mafft_cmd, shell=True)
 
+def phyutility(input_fasta, threshold, locus):
+    """
+    Clean gappy sequences using phyutility.
+    """
 
+    print("  Cleaning sequence with Phyutility.")
+    phyutility_cmd = "phyutility -clean "+str(threshold)+" -in "+input_fasta+" -out "+locus+"-cleaned.fasta"
+
+    proc = sps.call(phyutility_cmd, shell=True)
 
 # http://stackoverflow.com/questions/10035752/elegant-python-code-for-integer-partitioning
 # Stack Overflow saves the day again
@@ -226,7 +236,7 @@ def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
     for t in list(taxon_df.Taxon):
         clusters = [m.group(0) for h in headers for m in [re.match(t+"_"+".*", h)] if m]
         if len(clusters) == 0:
-            print("Taxon ", t, "not in current file.", sep='')
+            print("Taxon ", t, " not in current file.", sep='')
             continue
         unique_clusters = combine_matching_seqs(clusters, idx, t)
         write_log(t, unique_clusters, logfile) # log clustering info
@@ -341,26 +351,23 @@ def _main():
     # Check if a value for cleaning has been specified and that it is
     # valid (0.0 < x < 1.0).
     if clean != -999.9 and clean > 0.0 and clean < 1.0:
-        print("   Cleaning with Phyutility (threashold=", clean, ").", sep='')
         clean_seqs = True
     elif clean == -999.9:
         pass
     else:
-        print("  Invalid cleaning threashold (", clean, ").", sep='')
+        print("  Invalid cleaning threshold (", clean, ").", sep='')
         print("  Must be between 0.0 and 1.0.")
-
-    if realign:
-        print("Realigning sequences with mafft.")
+        sys.exit()
 
     if clean_seqs and realign:
-        mafft()
-        phyutility()
-        crunch_clusters(locus+"-realigned-cleaned.fasta", otu, err, locus, cutoff, hap)
+        mafft(input_fasta, locus)
+        phyutility(locus+"-realigned.fasta", clean, locus)
+        crunch_clusters(locus+"-cleaned.fasta", otu, err, locus, cutoff, hap)
     elif clean_seqs and not realign:
-        phyutility()
+        phyutility(input_fasta, clean, locus)
         crunch_clusters(locus+"-cleaned.fasta", otu, err, locus, cutoff, hap)
     elif realign and not clean_seqs:
-        mafft()
+        mafft(input_fasta, locus)
         crunch_clusters(locus+"-realigned.fasta", otu, err, locus, cutoff, hap)
     else:
         crunch_clusters(input_fasta,  otu, err, locus, cutoff, hap)
