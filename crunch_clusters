@@ -39,7 +39,7 @@ configurations.
 def rename(input_fasta):
     """
     remove semicolons from sequence names and replace with
-    underscores using sed
+    underscores using sed.
     """
     #print("  Checking for a working version of sed...", end='')
     #try:
@@ -48,7 +48,7 @@ def rename(input_fasta):
     #    sys.exit("\n\n** ERROR: could not execute sed **\n\n")
     #print("Good\n")
 
-    print("  Renaming sequences with sed.")
+    print("Renaming sequences with sed.\n")
     sed_cmd = [
         "sed",
         "-i", ".tmp",
@@ -63,20 +63,8 @@ def mafft(input_fasta, locus):
     Align input fasta file using mafft.
     """
 
-    print("  Realigning sequences using Mafft.")
-    #print("  Checking Mafft executable...    ", end='')
-    #try:
-    #    sps.check_call(['mafft', '-h'])
-    #except sps.CalledProcessError:
-    #    sys.exit("\n\n** ERROR: could not execute Mafft **\n\n")
-    #print("Good\n")
-
-    mafft_cmd = "mafft --auto --quiet "+input_fasta+" > "+locus+"-realigned.fasta",
-        #"--auto",
-        #"--quiet",
-        #input_fasta, ">",
-        #locus+"-realigned.fasta"
-    #]
+    print("Realigning sequences using Mafft.\n")
+    mafft_cmd = "mafft --auto --quiet "+input_fasta+" > "+locus+"-realigned.fasta"
 
     proc = sps.call(mafft_cmd, shell=True)
 
@@ -85,7 +73,7 @@ def phyutility(input_fasta, threshold, locus):
     Clean gappy sequences using phyutility.
     """
 
-    print("  Cleaning sequence with Phyutility.")
+    print("Cleaning sequence with Phyutility.\n")
     phyutility_cmd = "phyutility -clean "+str(threshold)+" -in "+input_fasta+" -out "+locus+"-cleaned.fasta"
 
     proc = sps.call(phyutility_cmd, shell=True)
@@ -208,7 +196,7 @@ def combine_matching_seqs(clusts, fasta_idx, taxon):
         matches_dict[taxon + "_" + header_one + "_size=" + str(total_size) + "_"] = matches
     return matches_dict
 
-def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
+def crunch_clusters(fasta, orig_fasta, species, error, locus, cutoff, haploid=False, unique=False):
     """
     The workhorse function that processes the input fasta file and dtermines
     haplotype configurations based on whether or not ploid levels are specified.
@@ -217,17 +205,38 @@ def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
     """
     idx = SeqIO.index(fasta, "fasta")
     headers = [i for i in idx.keys()]
+    keep_orig = False
+    if fasta != orig_fasta:
+        keep_orig = True
+        idx_orig = SeqIO.index(orig_fasta, "fasta")
+
+    # Check if outfiles already exist
     if not os.path.exists("./"+locus+"_crunched_clusters.fasta"):
         outfile = open(locus+"_crunched_clusters.fasta", 'w')
+        print("Writing haplotypes to "+locus+"_crunched_clusters.fasta.\n")
     else:
         os.rename("./"+locus+"_crunched_clusters.fasta", "./"+locus+"_crunched_clusters_old.fasta")
         outfile = open(locus+"_crunched_clusters.fasta", 'w')
+        print("Writing haplotypes to "+locus+"_crunched_clusters.fasta.")
+        print("Notice: File "+locus+"_crunched_clusters.fasta already exists.")
+        print("        Renaming to "+locus+"_crunched_clusters_old.txt.\n")
 
     if not os.path.exists("./"+locus+"_log.txt"):
         logfile = open(locus+"_log.txt", 'a')
     else:
-        os.rename("./"+locus+"_log.txt", "./"+locus+"_old_log.txt")
+        os.rename("./"+locus+"_log.txt", "./"+locus+"_log_old.txt")
         logfile = open(locus+"_log.txt", 'a')
+
+    if keep_orig:
+        if not os.path.exists("./"+locus+"_crunched_clusters_orig.fasta"):
+            orig_outfile = open(locus+"_crunched_clusters_orig.fasta", 'w')
+            print("Writing original sequences to "+locus+"_crunched_clusters_orig.fasta.\n")
+        else:
+            print("Writing original sequences to "+locus+"_crunched_clusters_orig.fasta")
+            os.rename("./"+locus+"_crunched_clusters_orig.fasta", "./"+locus+"_crunched_clusters_orig_old.fasta.")
+            orig_outfile = open(locus+"_crunched_clusters_orig.fasta", 'w')
+            print("Notice: File "+locus+"_crunched_clusters_orig.fasta already exists.")
+            print("        Renaming to "+locus+"_crunched_clusters_orig_old.fasta.\n")
 
     taxon_df = pd.read_csv(species, delim_whitespace=True)
     method=""
@@ -247,6 +256,9 @@ def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
             header = unique_clusters[sorted_sizes[0][0]][0].split("_")[0:-3]
             print(">"+empty.join(header)+"_haploid", file=outfile)
             print(str(idx[unique_clusters[sorted_sizes[0][0]][0]].seq), file=outfile)
+            if keep_orig:
+                print(">"+empty.join(header)+"_haploid", file=orig_outfile)
+                print(str(idx_orig[unique_clusters[sorted_sizes[0][0]][0]].seq), file=orig_outfile)
             #ll = haps_llik_with_ploidy(sorted_sizes[0], 1, error)
             #mle = sorted(ll.items(), key=operator.itemgetter(1), reverse=True)
         elif str(taxon_df.loc[taxon_df.Taxon == t].Ploidy.values[0]) == "None":
@@ -268,16 +280,27 @@ def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
             mle = sorted(ll.items(), key=operator.itemgetter(1), reverse=True)
         else:
             print("\n  ** WARNING: Haplotyping for individual", t, "was unsuccessful. **\n")
-            next
+            continue
 
         if method == "mle":
             allele_num = 1
             for m in range(0, len(mle[0][0])):
+                if unique:
+                    header = unique_clusters[sorted_sizes[m][0]][0].split("_")[0:-3]
+                    print(">"+empty.join(header)+"_haplotype"+str(allele_num), file=outfile)
+                    print(str(idx[unique_clusters[sorted_sizes[m][0]][0]].seq), file=outfile)
+                    if keep_orig:
+                        print(">"+empty.join(header)+"_haplotype"+str(allele_num), file=orig_outfile)
+                        print(str(idx_orig[unique_clusters[sorted_sizes[m][0]][0]].seq), file=orig_outfile)
+                    continue
                 for rep in range(0, mle[0][0][m]):
                     header = unique_clusters[sorted_sizes[m][0]][0].split("_")[0:-3]
                     print(">"+empty.join(header)+"_haplotype"+str(allele_num), file=outfile)
                     #print(">"+str(idx[unique_clusters[sorted_sizes[m][0]][0]].id)+"A_"+str(allele_num), file=outfile)
                     print(str(idx[unique_clusters[sorted_sizes[m][0]][0]].seq), file=outfile)
+                    if keep_orig:
+                        print(">"+empty.join(header)+"_haplotype"+str(allele_num), file=orig_outfile)
+                        print(str(idx_orig[unique_clusters[sorted_sizes[m][0]][0]].seq), file=orig_outfile)
                     allele_num += 1
         elif method == "ranked":
             allele_num = 1
@@ -285,6 +308,9 @@ def crunch_clusters(fasta, species, error, locus, cutoff, haploid=False):
                 header = unique_clusters[sorted_sizes[a][0]][0].split("_")[0:-3]
                 print(">"+empty.join(header)+"_haplotype"+str(allele_num) + "_1", file=outfile)
                 print(str(idx[unique_clusters[sorted_sizes[a][0]][0]].seq), file=outfile)
+                if keep_orig:
+                    print(">"+empty.join(header)+"_haplotype"+str(allele_num) + "_1", file=orig_outfile)
+                    print(str(idx_orig[unique_clusters[sorted_sizes[a][0]][0]].seq), file=orig_outfile)
                 allele_num += 1
         elif method == "haploid":
             continue
@@ -316,19 +342,21 @@ def _main():
     required.add_argument('-s', '--species_table', action="store", type=str, required=True,
                           metavar='\b', help="Data frame with taxon metadata")
     required.add_argument('-e', '--error_rates', action="store", type=str, required=True,
-                          metavar='\b', help="Per locus error rates.")
+                          metavar='\b', help="Per locus error rates table")
     required.add_argument('-l', '--locus_name', action="store", type=str, required=True,
                           metavar='\b', help="Name of locus being analyzed (must match name in error rates table)")
 
     additional = parser.add_argument_group("additional arguments")
-    additional.add_argument('-c', '--cutoff', action="store", type=float, default=0.05,
-                            metavar='\b', help="cutoff for allele determination [default=0.05]")
+    additional.add_argument('-c', '--cutoff', action="store", type=float, default=0.1,
+                            metavar='\b', help="cutoff for haplotyping w/o ploidy [default=0.1]")
     additional.add_argument('-hap', '--haploid', action="store_true", default=False,
                             help="flag to treat locus as haploid (e.g., for cpDNA loci)")
     additional.add_argument('--realign', action="store_true", default=False,
                             help="realign sequences using mafft prior to crunching clusters")
     additional.add_argument('--clean', action="store", type=float, default=-999.9,
                             metavar='\b', help="clean gappy sequences with phyutility using specified threshold")
+    additional.add_argument('--unique_haps', action="store_true", default=False,
+                            help="Only return unique haplotypes")
 
     args         = parser.parse_args()
     input_fasta  = args.input_fasta
@@ -339,6 +367,7 @@ def _main():
     hap          = args.haploid
     realign      = args.realign
     clean        = args.clean
+    unique_haps  = args.unique_haps
 
     print("\n", __header__, sep='')
 
@@ -362,15 +391,15 @@ def _main():
     if clean_seqs and realign:
         mafft(input_fasta, locus)
         phyutility(locus+"-realigned.fasta", clean, locus)
-        crunch_clusters(locus+"-cleaned.fasta", otu, err, locus, cutoff, hap)
+        crunch_clusters(locus+"-cleaned.fasta", input_fasta, otu, err, locus, cutoff, hap, unique_haps)
     elif clean_seqs and not realign:
         phyutility(input_fasta, clean, locus)
-        crunch_clusters(locus+"-cleaned.fasta", otu, err, locus, cutoff, hap)
+        crunch_clusters(locus+"-cleaned.fasta", input_fasta, otu, err, locus, cutoff, hap, unique_haps)
     elif realign and not clean_seqs:
         mafft(input_fasta, locus)
-        crunch_clusters(locus+"-realigned.fasta", otu, err, locus, cutoff, hap)
+        crunch_clusters(locus+"-realigned.fasta", input_fasta, otu, err, locus, cutoff, hap, unique_haps)
     else:
-        crunch_clusters(input_fasta,  otu, err, locus, cutoff, hap)
+        crunch_clusters(input_fasta, input_fasta,  otu, err, locus, cutoff, hap, unique_haps)
 
 if __name__ == "__main__":
     """

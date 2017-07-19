@@ -4,7 +4,7 @@ python:
     - "2.7"
     - "3.6"
 
-before_install:
+install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
   - sudo apt-get install gcc-4.8 g++-4.8 -y -qq
@@ -15,9 +15,9 @@ before_install:
   - pip install scipy
   - pip install matplotlib
 
-install:
+script:
     - make
     - sudo make install
 
-script:
+after_script:
     - make test
