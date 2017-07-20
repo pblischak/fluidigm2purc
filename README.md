@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/pblischak/fluidigm2purc.svg?branch=master)](https://travis-ci.org/pblischak/fluidigm2purc) [![Documentation Status](https://readthedocs.org/projects/fluidigm2purc/badge/?version=latest)](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest)
+[![Build Status](https://travis-ci.org/pblischak/fluidigm2purc.svg?branch=master)](https://travis-ci.org/pblischak/fluidigm2purc) [![Documentation Status](https://readthedocs.org/projects/fluidigm2purc/badge/?version=latest)](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest) [![Docker Build Status](https://img.shields.io/docker/build/pblischak/fluidigm2purc.svg)](https://hub.docker.com/r/pblischak/fluidigm2purc/)
 
 ## **fluidigm2purc**: processing of paired-end Fluidigm data for analysis with PURC
 
