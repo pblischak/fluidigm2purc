@@ -3,10 +3,10 @@
 Processing PURC Clusters
 ========================
 
-The crunch_clusters script takes the output from PURC and will determine
-the haplotype configurations for your samples using the sozes of the resultig clusters.
+The *crunch_clusters* script takes the output from PURC and will determine
+the haplotype configurations for your samples using the sizes of the resulting clusters.
 These clusters are the output from :ref:`PURC <Running_PURC>`. To see all of the
-options for running the script, type `crunch_clusters -h`.
+options for running the script, type ``crunch_clusters -h``.
 
 During this part of the pipeline, we use the taxon-ploidy table to determine the
 number of haplotypes that should be output (e.g., a diploid should have 2, a tetraploid 4, etc.).
@@ -33,6 +33,13 @@ to analyze each locus. If the loci under consideration are haploid, add the
   # List all of the loci using the error rates file
   for l in $(tail +2 error_df.txt | awk '{print $1}')
   do
-    crunch_clusters -i $l_clustered_reconsensus.afa -s output-taxon-table.txt \
+    crunch_clusters -i $l\_clustered_reconsensus.afa -s output-taxon-table.txt \
                     -e output-locus-err.txt -l $l
   done
+
+Some other useful options during this step include realigning the sequences using Mafft
+(just add ``--realign`` to your command).
+We can remove gappy sites using Phyutility as well.
+This can be done by adding the ``--clean <%>`` flag. Just substitute the percent of gaps allowed per
+site that you want to use for cleaning. We also also have an option to only return unique haplotypes using
+the ``--unique_haps`` flag.

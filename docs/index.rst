@@ -3,16 +3,24 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-fluidigm2purc
+Fluidigm2PURC
 =============
 
-|Build Status| |Documentation|
+|Build Status| |Documentation|  |Docker Build|
 
-**fluidigm2purc** is a set of Python scripts for processing paired-end Illumina data
+**Fluidigm2PURC** is a set of Python scripts for processing paired-end Illumina data
 generated using the Fluidigm platform for microfluidic PCR.
 
-Documentation
--------------
+Tutorials
+---------
+
+.. toctree::
+   :maxdepth: 1
+
+   quick_start.rst
+
+Main Documentation
+------------------
 
 .. toctree::
    :maxdepth: 1
@@ -22,14 +30,14 @@ Documentation
    running_purc.rst
    crunching_clusters.rst
 
-Tutorials
----------
+Extras
+------
 
 .. toctree::
    :maxdepth: 1
 
-   quick_start.rst
    haplotyping.rst
+   docker.rst
 
 Indices and tables
 ==================
@@ -43,3 +51,6 @@ Indices and tables
 
 .. |Documentation| image:: http://readthedocs.org/projects/fluidigm2purc/badge/?version=latest
    :target: http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest
+
+.. |Docker Build| image:: https://img.shields.io/docker/build/pblischak/fluidigm2purc.svg
+   :target: https://hub.docker.com/r/pblischak/fluidigm2purc

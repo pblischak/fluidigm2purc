@@ -1,9 +1,9 @@
 .. _Fluidigm2Purc:
 
-Running fluidigm2purc
-=====================
+Running *fluidigm2purc*
+=======================
 
-The fluidigm2purc script combines the tasks of read filtering/trimming based on
+The *fluidigm2purc* script combines the tasks of read filtering/trimming based on
 quality scores, merging filtered paired-end reads, and conversion of the resulting
 output to the proper format for running through PURC. Run ``fluidigm2purc -h`` to
 see options.
@@ -64,7 +64,7 @@ Additional outputs
 ``output.log``
 ^^^^^^^^^^^^^^
 
-The fluidigm2purc script will output a log file that lists the taxa and loci found
+The *fluidigm2purc* script will output a log file that lists the taxa and loci found
 during the processing of the FASTQ files. It also lists the command line arguments
 that were used to generate the analysis.
 
@@ -91,7 +91,7 @@ By default, all of the ploidy values are set to ``None``.
 ``output-locus-err.txt``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-fluidigm2purc will also calculate the per locus error rate using the PHRED
+*fluidigm2purc* will also calculate the per locus error rate using the PHRED
 quality scores in the FASTQ files. It does this by calculating the average error
 for each read mapping to a locus, followed by the overall average across reads.
 These error values are used in the :ref:`cluster crunching step <Crunching_Clusters>`

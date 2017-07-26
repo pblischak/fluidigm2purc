@@ -12,7 +12,7 @@ Requirements
    -  numpy
    -  pandas
    -  biopython
-   -  matplotlib
+   -  cython
 
 -  C, C++ compilers
 -  `PURC <https://bitbucket.org/crothfels/purc>`_
