@@ -33,7 +33,7 @@ to analyze each locus. If the loci under consideration are haploid, add the
   # List all of the loci using the error rates file
   for l in $(tail +2 error_df.txt | awk '{print $1}')
   do
-    crunch_clusters -i $l\_clustered_reconsensus.afa -s output-taxon-table.txt \
+    crunch_clusters -i ${l}_clustered_reconsensus.afa -s output-taxon-table.txt \
                     -e output-locus-err.txt -l $l
   done
 
@@ -43,3 +43,14 @@ We can remove gappy sites using Phyutility as well.
 This can be done by adding the ``--clean <%>`` flag. Just substitute the percent of gaps allowed per
 site that you want to use for cleaning. We also also have an option to only return unique haplotypes using
 the ``--unique_haps`` flag.
+
+.. note::
+
+  We have run into some issues with species' names when using Phyutility. First,
+  it doesn't like the semicolons that PURC uses to delimit the different parts of the
+  sequence identifier (species names, cluster #, cluster size). We use ``sed`` to substitute
+  underscores for the semicolons automatically. Other characters such as dashes have created
+  issues as well because they get automatically substituted for underscores and no longer match the
+  original names. If you are running into issues with not getting any output from the ``crunch_clusters``
+  script, make sure you check the names of the species in all of the files it writes to make sure that
+  things are being inadvertently changed.

@@ -54,17 +54,17 @@ def rename(input_fasta):
         # Try using the Mac way of sed first
         sed_cmd = [
             "sed",
-            "-i", "\"\"",
+            "-i", ".tmp",
             "s/\;/\_/g",
             input_fasta
             ]
         proc = sps.call(sed_cmd)
     except:
-        # If the above doesn't work, then it
+        # If the above doesn't work, then it will try using the linux version
         sed_cmd = [
             "sed",
             "-i",
-            "s/\;/\_/g",
+            "\'s/\;/\_/g\'",
             input_fasta
             ]
         proc = sps.call(sed_cmd)
