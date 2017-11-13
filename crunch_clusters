@@ -49,25 +49,25 @@ def rename(input_fasta):
     #    sys.exit("\n\n** ERROR: could not execute sed **\n\n")
     #print("Good\n")
 
-    print("Renaming sequences with sed.\n")
-    try:
-        # Try using the Mac way of sed first
+    
+    if platform.system() == 'Darwin':
+    	print("Renaming sequences with sed. [Mac]\n")
         sed_cmd = [
             "sed",
             "-i", ".tmp",
             "s/\;/\_/g",
             input_fasta
             ]
-        proc = sps.call(sed_cmd)
-    except:
-        # If the above doesn't work, then it will try using the linux version
+    else:
+    	print("Renaming sequences with sed. [Linux]\n")
         sed_cmd = [
             "sed",
             "-i",
-            "\'s/\;/\_/g\'",
+            "s/\;/\_/g",
             input_fasta
             ]
-        proc = sps.call(sed_cmd)
+
+    proc = sps.call(sed_cmd)
 
 def mafft(input_fasta, locus):
     """
