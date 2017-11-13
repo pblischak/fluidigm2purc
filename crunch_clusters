@@ -14,6 +14,7 @@ import math
 import sys
 import re
 import os
+import platform
 try:
     import subprocess32 as sps
 except ImportError:
@@ -49,14 +50,24 @@ def rename(input_fasta):
     #print("Good\n")
 
     print("Renaming sequences with sed.\n")
-    sed_cmd = [
-        "sed",
-        "-i", ".tmp",
-        "s/\;/\_/g",
-        input_fasta
-    ]
-
-    proc = sps.call(sed_cmd)
+    try:
+        # Try using the Mac way of sed first
+        sed_cmd = [
+            "sed",
+            "-i", "\"\"",
+            "s/\;/\_/g",
+            input_fasta
+            ]
+        proc = sps.call(sed_cmd)
+    except:
+        # If the above doesn't work, then it
+        sed_cmd = [
+            "sed",
+            "-i",
+            "s/\;/\_/g",
+            input_fasta
+            ]
+        proc = sps.call(sed_cmd)
 
 def mafft(input_fasta, locus):
     """
@@ -254,10 +265,10 @@ def crunch_clusters(fasta, orig_fasta, species, error, locus, cutoff, haploid=Fa
         if haploid:
             method = "haploid"
             header = unique_clusters[sorted_sizes[0][0]][0].split("_")[0:-3]
-            print(">"+empty.join(header)+"_haploid", file=outfile)
+            print(">"+empty.join(header), file=outfile)
             print(str(idx[unique_clusters[sorted_sizes[0][0]][0]].seq), file=outfile)
             if keep_orig:
-                print(">"+empty.join(header)+"_haploid", file=orig_outfile)
+                print(">"+empty.join(header), file=orig_outfile)
                 print(str(idx_orig[unique_clusters[sorted_sizes[0][0]][0]].seq), file=orig_outfile)
             #ll = haps_llik_with_ploidy(sorted_sizes[0], 1, error)
             #mle = sorted(ll.items(), key=operator.itemgetter(1), reverse=True)
@@ -287,29 +298,30 @@ def crunch_clusters(fasta, orig_fasta, species, error, locus, cutoff, haploid=Fa
             for m in range(0, len(mle[0][0])):
                 if unique:
                     header = unique_clusters[sorted_sizes[m][0]][0].split("_")[0:-3]
-                    print(">"+empty.join(header)+"_haplotype"+str(allele_num), file=outfile)
+                    print(">"+empty.join(header)+"_"+str(allele_num), file=outfile)
                     print(str(idx[unique_clusters[sorted_sizes[m][0]][0]].seq), file=outfile)
                     if keep_orig:
-                        print(">"+empty.join(header)+"_haplotype"+str(allele_num), file=orig_outfile)
+                        print(">"+empty.join(header)+"_"+str(allele_num), file=orig_outfile)
                         print(str(idx_orig[unique_clusters[sorted_sizes[m][0]][0]].seq), file=orig_outfile)
+                    allele_num += 1
                     continue
                 for rep in range(0, mle[0][0][m]):
                     header = unique_clusters[sorted_sizes[m][0]][0].split("_")[0:-3]
-                    print(">"+empty.join(header)+"_haplotype"+str(allele_num), file=outfile)
+                    print(">"+empty.join(header)+"_"+str(allele_num), file=outfile)
                     #print(">"+str(idx[unique_clusters[sorted_sizes[m][0]][0]].id)+"A_"+str(allele_num), file=outfile)
                     print(str(idx[unique_clusters[sorted_sizes[m][0]][0]].seq), file=outfile)
                     if keep_orig:
-                        print(">"+empty.join(header)+"_haplotype"+str(allele_num), file=orig_outfile)
+                        print(">"+empty.join(header)+"_"+str(allele_num), file=orig_outfile)
                         print(str(idx_orig[unique_clusters[sorted_sizes[m][0]][0]].seq), file=orig_outfile)
                     allele_num += 1
         elif method == "ranked":
             allele_num = 1
             for a in range(0, num_alleles):
                 header = unique_clusters[sorted_sizes[a][0]][0].split("_")[0:-3]
-                print(">"+empty.join(header)+"_haplotype"+str(allele_num) + "_1", file=outfile)
+                print(">"+empty.join(header)+"_"+str(allele_num), file=outfile)
                 print(str(idx[unique_clusters[sorted_sizes[a][0]][0]].seq), file=outfile)
                 if keep_orig:
-                    print(">"+empty.join(header)+"_haplotype"+str(allele_num) + "_1", file=orig_outfile)
+                    print(">"+empty.join(header)+"_"+str(allele_num), file=orig_outfile)
                     print(str(idx_orig[unique_clusters[sorted_sizes[a][0]][0]].seq), file=orig_outfile)
                 allele_num += 1
         elif method == "haploid":
