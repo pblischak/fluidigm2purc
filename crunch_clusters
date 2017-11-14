@@ -21,12 +21,12 @@ except ImportError:
     import subprocess as sps
 
 #### header and version info. ##################################################
-
-__version__ = "This is crunch_clusters v0.1.0-alpha (May 2017)."
+vnum = open("VERSION.txt", 'r').readline().strip()
+__version__ = "This is crunch_clusters v"+vnum+"."
 
 __header__ = """\
 **********************************************
-crunch_clusters (v0.1.0-alpha)
+crunch_clusters
 
 Processing of PURC clusters into haplotype
 configurations.
@@ -49,7 +49,7 @@ def rename(input_fasta):
     #    sys.exit("\n\n** ERROR: could not execute sed **\n\n")
     #print("Good\n")
 
-    
+
     if platform.system() == 'Darwin':
     	print("Renaming sequences with sed. [Mac]\n")
         sed_cmd = [

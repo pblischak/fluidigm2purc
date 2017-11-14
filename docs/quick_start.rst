@@ -72,7 +72,7 @@ and add them to your PATH.
 --------------------------
 
 The *fluidigm2purc* script will process a set of paired-end FASTQ files and will
-output a single FASTA file for each locus present in the file with sequence header information
+output a single FASTA file for each locus present using sequence header information
 in the format required by PURC. As an example, let's say that we have our paired-end data
 in the files ``FluidigmData_R1.fastq.gz`` and ``FluidigmData_R2.fastq.gz``. To run these
 data through the script, all we would need to run is:
@@ -93,9 +93,9 @@ In addition to the FASTA files, the fluidigm2purc script outputs two other files
 3. Running PURC
 ---------------
 
-If we ``cd`` into the ``output-FASTA`` directory, we can run PURC using its *purc_recluster.py** script
+If we ``cd`` into the ``output-FASTA`` directory, we can run PURC using its *purc_recluster.py* script
 to do sequence clustering and PCR chimera detection. The code below will loop through all of the FASTA files in
-the ``output-FASTA`` directory and will write all of the output to a new directory named ``output-PURC``.
+the ``output-FASTA`` directory and will write all of the output to a new directory named ``output-PURC/``.
 
 .. code:: bash
 
@@ -103,7 +103,7 @@ the ``output-FASTA`` directory and will write all of the output to a new directo
 
   for f in *.fasta
   do
-    purc_recluster.py -f $f -o ouput-PURC \
+    purc_recluster.py -f $f -o output-PURC \
                       -c 0.975 0.99 0.995 0.997 -s 2 5 --clean
   done
 
@@ -112,11 +112,13 @@ the ``output-FASTA`` directory and will write all of the output to a new directo
 
 The script to infer haplotypes from the clusters returned by PURC is called *crunch_cluster*.
 If you ``cd`` into the directory where we wrote all of the PURC output, you can loop through each
-locus and . If you know the ploidy levels for your organism, you can add them to the ``output-taxon-table.txt``
-file.
+locus and analyze each one in turn. If you know the ploidy levels for your organism,
+you can add them to the ``output-taxon-table.txt`` file.
 
 The code below will use the locus names in the ``output-locus-err.txt`` file to loop through
-all of the output files from PURC to infer haplotypes.
+all of the output files from PURC to infer haplotypes. It will also realign the sequences clustering
+Mafft (``--realign``), clean the sequences using Phyutility (``\\clean 0.4``),
+and will only return unique haplotypes for each sample.
 
 .. code:: bash
 
@@ -124,7 +126,7 @@ all of the output files from PURC to infer haplotypes.
 
   for l in $(tail +2 ../../output-locus-err.txt | awk '{print $1}')
   do
-    crunch_clusters -i $l\_clustered_reconsensus.afa -s ../../output-taxon-table.txt \
+    crunch_clusters -i ${l}_clustered_reconsensus.afa -s ../../output-taxon-table.txt \
                     -e ../../output-locus-err.txt -l $l --realign --clean 0.4 --unique_haps
   done
 

@@ -1,0 +1,5 @@
+0.1.1-alpha
+  Bug fixes in crunch_clusters with using sed and species names.
+
+0.1.0-alpha
+  First test version of Fluidigm2PURC.
