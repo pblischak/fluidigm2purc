@@ -18,7 +18,10 @@ import gzip
 import itertools
 
 #### header and version info. ##################################################
-vnum = open("VERSION.txt", 'r').readline().strip()
+try:
+    vnum = open("VERSION.txt", 'r').readline().strip()
+except:
+    vnum = "0.1.1-alpha"
 __version__ = "This is fluidigm2purc v"+vnum+"."
 
 __header__ = """**********************************************
