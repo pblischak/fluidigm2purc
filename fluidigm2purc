@@ -22,10 +22,10 @@ try:
     vnum = open("VERSION.txt", 'r').readline().strip()
 except:
     vnum = "0.1.1-alpha"
-__version__ = "This is fluidigm2purc v"+vnum+"."
+__version__ = "This is Fluidigm2PURC v"+vnum+"."
 
 __header__ = """**********************************************
-fluidigm2purc (v0.1.0-alpha)
+fluidigm2purc
 
 Processing of paired-end FASTQ data from the
 Fluidigm platform for input to PURC.
