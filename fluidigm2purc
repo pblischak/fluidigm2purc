@@ -238,6 +238,10 @@ def PURCify_fastq(outname, gz):
                 line_counter = 1
             else:
                 raise_error("Something done messed up.", line_counter)
+    except EOFError:
+        print("\nWARN: Detected end-of-file error. FASTQ file may be corrupted.")
+        print("      Skipping for now...\n")
+        pass
     finally:
         unmerged1.close()
         unmerged2.close()
