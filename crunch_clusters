@@ -55,20 +55,10 @@ def rename(input_fasta):
 
     if platform.system() == 'Darwin':
     	print("Renaming sequences with sed. [Mac]\n")
-        sed_cmd = [
-            "sed",
-            "-i", ".tmp",
-            "s/\;/\_/g",
-            input_fasta
-            ]
+        sed_cmd = ["sed", "-i", ".tmp", "s/\;/\_/g", input_fasta]
     else:
     	print("Renaming sequences with sed. [Linux]\n")
-        sed_cmd = [
-            "sed",
-            "-i",
-            "s/\;/\_/g",
-            input_fasta
-            ]
+        sed_cmd = ["sed", "-i", "s/\;/\_/g", input_fasta]
 
     proc = sps.call(sed_cmd)
 
