@@ -177,7 +177,7 @@ def PURCify_fastq(outname, gz):
     read_counter = 1
     for line in gzip.open(outname+"-flashed.extendedFrags.fastq.gz", 'r'):
         if line_counter == 1:
-            info = str(line).strip().split(" ")[1].split(":")
+            info = line.decode().strip().split(" ")[1].split(":")
             if info[-1] not in locus_outfiles.keys():
                 locus_outfiles[info[-1]] = open("./"+outname+"-FASTA/"+info[-1]+".fasta", 'w')
             print(">", info[-2], "|", info[-1], "|", str(read_counter), file=locus_outfiles[info[-1]], sep='')
@@ -190,12 +190,12 @@ def PURCify_fastq(outname, gz):
             read_counter += 1
             prev_locus = info[-1]
         elif line_counter == 2:
-            print(str(line).strip(), file=locus_outfiles[prev_locus], sep='')
+            print(line.decode().strip(), file=locus_outfiles[prev_locus], sep='')
             line_counter = 3
         elif line_counter == 3:
             line_counter = 4
         elif line_counter == 4:
-            per_locus_error[info[-1]].append(convert_phred(str(line).strip()))
+            per_locus_error[info[-1]].append(convert_phred(line.decode().strip()))
             line_counter = 1
         else:
             raise_error("Something done messed up.", line_counter)
@@ -206,8 +206,8 @@ def PURCify_fastq(outname, gz):
     line_counter = 1
     for line1, line2 in zip(unmerged1,unmerged2):
         if line_counter == 1:
-            info1 = line1.strip().split(" ")[1].split(":")
-            info2 = line2.strip().split(" ")[1].split(":")
+            info1 = line1.decode().strip().split(" ")[1].split(":")
+            info2 = line2.decode().strip().split(" ")[1].split(":")
             assert info1[-1] == info2[-1]
             assert info1[-2] == info2[-2]
             if info1[-1] not in locus_outfiles.keys():
@@ -222,13 +222,13 @@ def PURCify_fastq(outname, gz):
             read_counter += 1
             prev_locus = info1[-1]
         elif line_counter == 2:
-            seq = Seq(line2.strip())
-            print(line1.strip(), "NNNNNNNN", seq.reverse_complement(), file=locus_outfiles[prev_locus], sep='')
+            seq = Seq(line2.decode().strip())
+            print(line1.decode().strip(), "NNNNNNNN", seq.reverse_complement(), file=locus_outfiles[prev_locus], sep='')
             line_counter = 3
         elif line_counter == 3:
             line_counter = 4
         elif line_counter == 4:
-            per_locus_error[info[-1]].append(convert_phred(line1.strip()+line2.strip()))
+            per_locus_error[info[-1]].append(convert_phred(line1.decode().strip()+line2.decode().strip()))
             line_counter = 1
         else:
             raise_error("Something done messed up.", line_counter)
