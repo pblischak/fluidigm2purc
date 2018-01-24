@@ -64,7 +64,7 @@ def run_sickle(prefix, outname, quality, min_length):
     print("  Checking Sickle executable...    ", end='')
     test_proc = sps.Popen(['sickle'], stdout=sps.PIPE, stderr=sps.PIPE, shell=True)
     (out, err) = test_proc.communicate()
-    if not str(out).startswith("\nUsage"):
+    if not out.startswith("\nUsage".encode()):
         sys.exit("\n\n** ERROR: could not execute Sickle **\n\n")
     else:
         print("Good\n")
@@ -100,7 +100,7 @@ def run_flash2(outname, threads):
     print("  Checking FLASH2 executable...    ", end='')
     test_proc = sps.Popen(['flash2'], stdout=sps.PIPE, stderr=sps.PIPE, shell=True)
     (out, err) = test_proc.communicate()
-    if not str(err).startswith("Usage"):
+    if not err.startswith("Usage".encode()):
         sys.exit("\n\n** ERROR: Could not execute FLASH2 **\n\n")
     else:
         print("Good\n")
