@@ -175,63 +175,72 @@ def PURCify_fastq(outname, gz):
         sys.exit(-1)
     line_counter = 1
     read_counter = 1
-    for line in gzip.open(outname+"-flashed.extendedFrags.fastq.gz", 'r'):
-        if line_counter == 1:
-            info = line.decode().strip().split(" ")[1].split(":")
-            if info[-1] not in locus_outfiles.keys():
-                locus_outfiles[info[-1]] = open("./"+outname+"-FASTA/"+info[-1]+".fasta", 'w')
-            print(">", info[-2], "|", info[-1], "|", str(read_counter), file=locus_outfiles[info[-1]], sep='')
-            if info[-1] not in loci:
-                per_locus_error[info[-1]] = []
-                loci.append(info[-1])
-            if info[-2] not in taxa:
-                taxa.append(info[-2])
-            line_counter = 2
-            read_counter += 1
-            prev_locus = info[-1]
-        elif line_counter == 2:
-            print(line.decode().strip(), file=locus_outfiles[prev_locus], sep='')
-            line_counter = 3
-        elif line_counter == 3:
-            line_counter = 4
-        elif line_counter == 4:
-            per_locus_error[info[-1]].append(convert_phred(line.decode().strip()))
-            line_counter = 1
-        else:
-            raise_error("Something done messed up.", line_counter)
+    try:
+        for line in gzip.open(outname+"-flashed.extendedFrags.fastq.gz", 'r'):
+            if line_counter == 1:
+                info = line.decode().strip().split(" ")[1].split(":")
+                if info[-1] not in locus_outfiles.keys():
+                    locus_outfiles[info[-1]] = open("./"+outname+"-FASTA/"+info[-1]+".fasta", 'w')
+                print(">", info[-2], "|", info[-1], "|", str(read_counter), file=locus_outfiles[info[-1]], sep='')
+                if info[-1] not in loci:
+                    per_locus_error[info[-1]] = []
+                    loci.append(info[-1])
+                if info[-2] not in taxa:
+                    taxa.append(info[-2])
+                line_counter = 2
+                read_counter += 1
+                prev_locus = info[-1]
+            elif line_counter == 2:
+                print(line.decode().strip(), file=locus_outfiles[prev_locus], sep='')
+                line_counter = 3
+            elif line_counter == 3:
+                line_counter = 4
+            elif line_counter == 4:
+                per_locus_error[info[-1]].append(convert_phred(line.decode().strip()))
+                line_counter = 1
+            else:
+                raise_error("Something done messed up.", line_counter)
+    except EOFError:
+        print("\nWARN: Detected end-of-file error. FASTQ file may be corrupted.")
+        print("      Skipping for now...\n")
+        pass
 
     # Combine unmerged reads with 8 N's in between them.
-    unmerged1 = gzip.open(outname+"-flashed.notCombined_1.fastq.gz")
-    unmerged2 = gzip.open(outname+"-flashed.notCombined_2.fastq.gz")
-    line_counter = 1
-    for line1, line2 in zip(unmerged1,unmerged2):
-        if line_counter == 1:
-            info1 = line1.decode().strip().split(" ")[1].split(":")
-            info2 = line2.decode().strip().split(" ")[1].split(":")
-            assert info1[-1] == info2[-1]
-            assert info1[-2] == info2[-2]
-            if info1[-1] not in locus_outfiles.keys():
-                locus_outfiles[info1[-1]] = open("./"+outname+"-FASTA/"+info1[-1]+".fasta", 'w')
-            print(">", info1[-2], "|", info1[-1], "|", str(read_counter), file=locus_outfiles[info1[-1]], sep='')
-            if info1[-1] not in loci:
-                per_locus_error[info[-1]] = []
-                loci.append(info1[-1])
-            if info1[-2] not in taxa:
-                taxa.append(info1[-2])
-            line_counter = 2
-            read_counter += 1
-            prev_locus = info1[-1]
-        elif line_counter == 2:
-            seq = Seq(line2.decode().strip())
-            print(line1.decode().strip(), "NNNNNNNN", seq.reverse_complement(), file=locus_outfiles[prev_locus], sep='')
-            line_counter = 3
-        elif line_counter == 3:
-            line_counter = 4
-        elif line_counter == 4:
-            per_locus_error[info[-1]].append(convert_phred(line1.decode().strip()+line2.decode().strip()))
-            line_counter = 1
-        else:
-            raise_error("Something done messed up.", line_counter)
+    try:
+        unmerged1 = gzip.open(outname+"-flashed.notCombined_1.fastq.gz", 'r')
+        unmerged2 = gzip.open(outname+"-flashed.notCombined_2.fastq.gz", 'r')
+        line_counter = 1
+        for line1, line2 in zip(unmerged1,unmerged2):
+            if line_counter == 1:
+                info1 = line1.decode().strip().split(" ")[1].split(":")
+                info2 = line2.decode().strip().split(" ")[1].split(":")
+                assert info1[-1] == info2[-1]
+                assert info1[-2] == info2[-2]
+                if info1[-1] not in locus_outfiles.keys():
+                    locus_outfiles[info1[-1]] = open("./"+outname+"-FASTA/"+info1[-1]+".fasta", 'w')
+                print(">", info1[-2], "|", info1[-1], "|", str(read_counter), file=locus_outfiles[info1[-1]], sep='')
+                if info1[-1] not in loci:
+                    per_locus_error[info[-1]] = []
+                    loci.append(info1[-1])
+                if info1[-2] not in taxa:
+                    taxa.append(info1[-2])
+                line_counter = 2
+                read_counter += 1
+                prev_locus = info1[-1]
+            elif line_counter == 2:
+                seq = Seq(line2.decode().strip())
+                print(line1.decode().strip(), "NNNNNNNN", seq.reverse_complement(), file=locus_outfiles[prev_locus], sep='')
+                line_counter = 3
+            elif line_counter == 3:
+                line_counter = 4
+            elif line_counter == 4:
+                per_locus_error[info[-1]].append(convert_phred(line1.decode().strip()+line2.decode().strip()))
+                line_counter = 1
+            else:
+                raise_error("Something done messed up.", line_counter)
+    finally:
+        unmerged1.close()
+        unmerged2.close()
 
 #### some utility functions. ###################################################
 
