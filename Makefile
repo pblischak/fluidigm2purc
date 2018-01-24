@@ -43,3 +43,4 @@ test :
 	@flash2 --help
 	@fluidigm2purc -h
 	@crunch_clusters -h
+	@cd tests; fluidigm2purc -f TEST

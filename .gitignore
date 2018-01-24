@@ -1,5 +1,7 @@
 deps
 tests
+!tests/TEST_R1.fastq.gz
+!tests/TEST_R2.fastq.gz
 *.pyc
 .DS_Store
 *~
