@@ -190,12 +190,12 @@ def PURCify_fastq(outname, gz):
             read_counter += 1
             prev_locus = info[-1]
         elif line_counter == 2:
-            print(line.strip(), file=locus_outfiles[prev_locus], sep='')
+            print(str(line).strip(), file=locus_outfiles[prev_locus], sep='')
             line_counter = 3
         elif line_counter == 3:
             line_counter = 4
         elif line_counter == 4:
-            per_locus_error[info[-1]].append(convert_phred(line.strip()))
+            per_locus_error[info[-1]].append(convert_phred(str(line).strip()))
             line_counter = 1
         else:
             raise_error("Something done messed up.", line_counter)
