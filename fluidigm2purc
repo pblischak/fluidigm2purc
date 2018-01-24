@@ -15,7 +15,10 @@ import sys
 import os
 import argparse
 import gzip
-import itertools
+try:
+    from itertools import izip as zip
+except ImportError:
+    pass
 
 #### header and version info. ##################################################
 try:
@@ -201,7 +204,7 @@ def PURCify_fastq(outname, gz):
     unmerged1 = gzip.open(outname+"-flashed.notCombined_1.fastq.gz")
     unmerged2 = gzip.open(outname+"-flashed.notCombined_2.fastq.gz")
     line_counter = 1
-    for line1, line2 in itertools.izip(unmerged1,unmerged2):
+    for line1, line2 in zip(unmerged1,unmerged2):
         if line_counter == 1:
             info1 = line1.strip().split(" ")[1].split(":")
             info2 = line2.strip().split(" ")[1].split(":")
