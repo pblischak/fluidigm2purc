@@ -1,3 +1,6 @@
+0.1.2-alpha
+  Making fluidigm2purc script Python 3 compatible.
+
 0.1.1-alpha
   Bug fixes in crunch_clusters with using sed and species names.
 
