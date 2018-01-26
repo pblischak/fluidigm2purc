@@ -31,7 +31,7 @@ to analyze each locus. If the loci under consideration are haploid, add the
 .. code:: bash
 
   # List all of the loci using the error rates file
-  for l in $(tail +2 error_df.txt | awk '{print $1}')
+  for l in $(tail +2 output-locus-err.txt | awk '{print $1}')
   do
     crunch_clusters -i ${l}_clustered_reconsensus.afa -s output-taxon-table.txt \
                     -e output-locus-err.txt -l $l

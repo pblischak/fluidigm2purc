@@ -12,7 +12,10 @@ be found in the main documentation.
 - Python (we suggest using `Miniconda <https://conda.io/miniconda.html>`_)
 - Python modules: pandas, numpy, biopython, cython
 - C, C++ compilers (Linux should be good, Mac OSX needs Xcode and the **Command Line Tools**)
-- PURC (available on Bitbucket)
+- PURC (available on `Bitbucket <https://bitbucket.org/crothfels/purc>`_)
+
+We have tested our scripts on Python 2.7, 3.5, and 3.6. However, **PURC has only been
+tested with Python 2.7.**
 
 1. Downloading and Installation
 -------------------------------
@@ -71,8 +74,9 @@ and add them to your PATH.
 2. Running *fluidigm2purc*
 --------------------------
 
-The *fluidigm2purc* script will process a set of paired-end FASTQ files and will
-output a single FASTA file for each locus present using sequence header information
+The *fluidigm2purc* script will process a set of paired-end FASTQ files that
+have been demultiplexed using the program `dbcAmplicons <https://github.com/msettles/dbcAmplicons>`_
+and will output a single FASTA file for each locus present using sequence header information
 in the format required by PURC. As an example, let's say that we have our paired-end data
 in the files ``FluidigmData_R1.fastq.gz`` and ``FluidigmData_R2.fastq.gz``. To run these
 data through the script, all we would need to run is:
@@ -124,10 +128,10 @@ and will only return unique haplotypes for each sample.
 
   cd output-PURC
 
-  for l in $(tail +2 ../../output-locus-err.txt | awk '{print $1}')
+  for l in $(tail +2 output-locus-err.txt | awk '{print $1}')
   do
-    crunch_clusters -i ${l}_clustered_reconsensus.afa -s ../../output-taxon-table.txt \
-                    -e ../../output-locus-err.txt -l $l --realign --clean 0.4 --unique_haps
+    crunch_clusters -i ${l}_clustered_reconsensus.afa -s output-taxon-table.txt \
+                    -e output-locus-err.txt -l $l --realign --clean 0.4 --unique_haps
   done
 
 5. Downstream

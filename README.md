@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/pblischak/fluidigm2purc.svg?branch=master)](https://travis-ci.org/pblischak/fluidigm2purc) [![Documentation Status](https://readthedocs.org/projects/fluidigm2purc/badge/?version=latest)](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest) [![Docker Build Status](https://img.shields.io/docker/build/pblischak/fluidigm2purc.svg)](https://hub.docker.com/r/pblischak/fluidigm2purc/)
 
-## **Fluidigm2PURC**: processing of paired-end Fluidigm data for analysis with PURC
+## **Fluidigm2PURC**: automated processing and haplotype inference for double-barcoded PCR amplicons
 
 ## [**Read the Docs**](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest)
 
