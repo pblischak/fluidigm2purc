@@ -4,7 +4,7 @@
 # fluidigm2purc
 # Written by PD Blischak
 
-from __future__ import print_function
+from __future__ import print_function, division
 
 try:
     import subprocess32 as sps
