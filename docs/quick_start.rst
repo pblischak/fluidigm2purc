@@ -17,8 +17,8 @@ be found in the main documentation.
 .. note::
 
   We have tested our scripts on Python 2.7, 3.5, and 3.6. However, **PURC has only been
-  tested with Python 2.7.** We have also worked with others wh had trouble getting things
-  run with Python 3.*. Therefore, we recommend using Python 2.7.
+  tested with Python 2.7.** We have also worked with others researchers who had trouble
+  getting things run with Python 3. Therefore, we recommend using Python 2.7.
 
 1. Downloading and Installation
 -------------------------------
@@ -60,9 +60,9 @@ script instead. The `Bitbucket repository for PURC <https://bitbucket.org/crothf
 has more details about installation as well.
 
 We have also included a modified version of the *purc_recluster.py* script as part of our
-pipeline. The only difference is that it conducts fewer iterations of the chierma detection
-and clustering steps. If you would like to use it, make sure that move or copy it
-from the Fluidigm2PURC folder into the main PURC folder.
+pipeline (*purc_recluster2.py*). The only difference is that it conducts fewer iterations
+of the chierma detection and clustering steps. If you would like to use it, make sure that
+move or copy it from the Fluidigm2PURC folder into the main PURC folder.
 
 .. note::
 
@@ -147,10 +147,10 @@ and will only return unique haplotypes for each sample.
 
   cd output-PURC
 
-  for l in $(tail +2 output-locus-err.txt | awk '{print $1}')
+  for l in $(tail +2 ../../output-locus-err.txt | awk '{print $1}')
   do
-    crunch_clusters -i ${l}_clustered_reconsensus.afa -s output-taxon-table.txt \
-                    -e output-locus-err.txt -l $l --realign --clean 0.4 --unique_haps
+    crunch_clusters -i ${l}_clustered_reconsensus.afa -s ../../output-taxon-table.txt \
+                    -e ../../output-locus-err.txt -l $l --realign --clean 0.4 --unique_haps
   done
 
 5. Downstream

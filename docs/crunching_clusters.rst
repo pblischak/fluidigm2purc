@@ -16,9 +16,11 @@ provides details on the mathematical model that we use for this step.
 
 .. code:: bash
 
+  cd output-PURC/
+
   crunch_clusters --input_fasta loc1_clustered_reconsensus.afa \
-                  --species_table output-taxon-table.txt \
-                  --error_rates output-locus-err.txt --locus_name loc1
+                  --species_table ../../output-taxon-table.txt \
+                  --error_rates ../../output-locus-err.txt --locus_name loc1
 
 We can also treat the locus as haploid by specifying the ``--haploid`` flag.
 This can be used for chloroplast or mitochondrial loci, as well as for nuclear
@@ -31,10 +33,10 @@ to analyze each locus. If the loci under consideration are haploid, add the
 .. code:: bash
 
   # List all of the loci using the error rates file
-  for l in $(tail +2 output-locus-err.txt | awk '{print $1}')
+  for l in $(tail +2 ../../output-locus-err.txt | awk '{print $1}')
   do
-    crunch_clusters -i ${l}_clustered_reconsensus.afa -s output-taxon-table.txt \
-                    -e output-locus-err.txt -l $l
+    crunch_clusters -i ${l}_clustered_reconsensus.afa -s ../../output-taxon-table.txt \
+                    -e ../../output-locus-err.txt -l $l
   done
 
 Some other useful options during this step include realigning the sequences using Mafft

@@ -14,7 +14,7 @@ Requirements
    -  biopython
    -  cython
 
--  C, C++ compilers
+-  C, C++ compilers (Mac users need Xcode Command Line Tools)
 -  `PURC <https://bitbucket.org/crothfels/purc>`_
 
 Installation
