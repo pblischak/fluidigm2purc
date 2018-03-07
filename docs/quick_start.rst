@@ -12,6 +12,7 @@ be found in the main documentation.
 - Python (we suggest using `Miniconda <https://conda.io/miniconda.html>`_)
 - Python modules: pandas, numpy, biopython, cython
 - C, C++ compilers (Linux should be good, Mac OSX needs Xcode and the **Command Line Tools**)
+- zlib (needed to compile Sickle)
 - PURC (available on `Bitbucket <https://bitbucket.org/crothfels/purc>`_)
 
 .. note::
@@ -61,7 +62,7 @@ has more details about installation as well.
 
 We have also included a modified version of the *purc_recluster.py* script as part of our
 pipeline (*purc_recluster2.py*). The only difference is that it conducts fewer iterations
-of the chierma detection and clustering steps. If you would like to use it, make sure that
+of the chimera detection and clustering steps. If you would like to use it, make sure that
 move or copy it from the Fluidigm2PURC folder into the main PURC folder.
 
 .. note::

@@ -15,6 +15,7 @@ Requirements
    -  cython
 
 -  C, C++ compilers (Mac users need Xcode Command Line Tools)
+-  zlib (needed for Sickle)
 -  `PURC <https://bitbucket.org/crothfels/purc>`_
 
 Installation

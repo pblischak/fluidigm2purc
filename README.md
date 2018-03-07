@@ -24,7 +24,7 @@ from the Fluidigm Access Array: *fluidigm2purc* and *crunch_clusters*.
  unknown ploidy, or any mix of the three.
 
 To obtain and install Fluidigm2PURC and its required dependencies
-([Sickle](https://github.com/najoshi/sickle),
+([Sickle](https://github.com/najoshi/sickle) [requires zlib],
 [FLASH2](https://github.com/dstreett/FLASH2)),
 run the following commands in a terminal:
 
