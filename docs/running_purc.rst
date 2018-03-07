@@ -7,7 +7,8 @@ After running the *fluidigm2purc* script, you will have a new directory
 named ``output-FASTA``. The next
 in the process is to run PURC. We will do this for each FASTA file individually
 using a Bash for loop. The script from PURC that we will run is called
-*purc_recluster.py* (make sure it is in your ``PATH``). The code below is an example
+*purc_recluster.py*. Make sure that it is in the main PURC folder and also that
+it is in your ``PATH``). The code below is an example
 of what this would look like if you are running things on a Unix-flavored computer.
 
 .. code:: bash

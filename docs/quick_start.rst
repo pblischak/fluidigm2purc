@@ -14,8 +14,11 @@ be found in the main documentation.
 - C, C++ compilers (Linux should be good, Mac OSX needs Xcode and the **Command Line Tools**)
 - PURC (available on `Bitbucket <https://bitbucket.org/crothfels/purc>`_)
 
-We have tested our scripts on Python 2.7, 3.5, and 3.6. However, **PURC has only been
-tested with Python 2.7.**
+.. note::
+
+  We have tested our scripts on Python 2.7, 3.5, and 3.6. However, **PURC has only been
+  tested with Python 2.7.** We have also worked with others wh had trouble getting things
+  run with Python 3.*. Therefore, we recommend using Python 2.7.
 
 1. Downloading and Installation
 -------------------------------
@@ -55,6 +58,17 @@ PURC is available on Bitbucket and can be cloned and installed using the code be
 If you are on a Linux computer, you may have to run the ``install_dependencies_linux.sh``
 script instead. The `Bitbucket repository for PURC <https://bitbucket.org/crothfels/purc/src/>`_
 has more details about installation as well.
+
+We have also included a modified version of the *purc_recluster.py* script as part of our
+pipeline. The only difference is that it conducts fewer iterations of the chierma detection
+and clustering steps. If you would like to use it, make sure that move or copy it
+from the Fluidigm2PURC folder into the main PURC folder.
+
+.. note::
+
+  For the PURC scripts to work, they need to be present in the main PURC folder
+  that was cloned from Bitbucket. These scripts also need to be made available
+  in your bash ``PATH`` variable (see code above).
 
 Fluidigm2PURC
 ^^^^^^^^^^^^^
@@ -98,8 +112,13 @@ In addition to the FASTA files, the fluidigm2purc script outputs two other files
 ---------------
 
 If we ``cd`` into the ``output-FASTA`` directory, we can run PURC using its *purc_recluster.py* script
-to do sequence clustering and PCR chimera detection. The code below will loop through all of the FASTA files in
-the ``output-FASTA`` directory and will write all of the output to a new directory named ``output-PURC/``.
+to do sequence clustering and PCR chimera detection. If you want to use the *purc_recluster2.py* script,
+make sure you move or copy it into the main PURC folder. Also, because *purc_recluster2.py* only
+does three iterations of chimera detection and clustering, it only requires that two clustering
+thresholds be specified using the ``-c`` argument (rather than the usual four).
+
+The code below will loop through all of the FASTA files in the ``output-FASTA`` directory and
+will write all of the output to a new directory named ``output-PURC/``.
 
 .. code:: bash
 
@@ -121,7 +140,7 @@ you can add them to the ``output-taxon-table.txt`` file.
 
 The code below will use the locus names in the ``output-locus-err.txt`` file to loop through
 all of the output files from PURC to infer haplotypes. It will also realign the sequences clustering
-Mafft (``--realign``), clean the sequences using Phyutility (``\\clean 0.4``),
+Mafft (``--realign``), clean the sequences using Phyutility (``--clean 0.4``),
 and will only return unique haplotypes for each sample.
 
 .. code:: bash
