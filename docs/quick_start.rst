@@ -12,7 +12,7 @@ be found in the main documentation.
 - Python (we suggest using `Miniconda <https://conda.io/miniconda.html>`_)
 - Python modules: pandas, numpy, biopython, cython
 - C, C++ compilers (Linux should be good, Mac OSX needs Xcode and the **Command Line Tools**)
-- zlib (needed to compile Sickle)
+- zlib (needed to compile Sickle; may already be present)
 - PURC (available on `Bitbucket <https://bitbucket.org/crothfels/purc>`_)
 
 .. note::
