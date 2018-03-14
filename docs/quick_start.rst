@@ -68,8 +68,10 @@ move or copy it from the Fluidigm2PURC folder into the main PURC folder.
 .. note::
 
   For the PURC scripts to work, they need to be present in the main PURC folder
-  that was cloned from Bitbucket. These scripts also need to be made available
-  in your bash ``PATH`` variable (see code above).
+  that was cloned from Bitbucket. The reason for this is that the scripts reference
+  all its dependencies using file paths that are relative to the main PURC folder.
+  These scripts also need to be made available in your bash ``PATH`` variable
+  (see code above).
 
 Fluidigm2PURC
 ^^^^^^^^^^^^^
