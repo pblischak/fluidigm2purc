@@ -1,3 +1,6 @@
+0.2.0
+  Adding script to calculate error in FASTQ files from PacBio.
+
 0.1.2-alpha
   Making fluidigm2purc script Python 3 compatible.
 

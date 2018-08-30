@@ -24,7 +24,7 @@ except ImportError:
 try:
     vnum = open("VERSION.txt", 'r').readline().strip()
 except:
-    vnum = "0.1.2-alpha"
+    vnum = "0.2.0"
 __version__ = "This is Fluidigm2PURC v"+vnum+"."
 
 __header__ = """**********************************************

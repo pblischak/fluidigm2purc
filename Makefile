@@ -27,7 +27,7 @@ pear :
 	@rm -rf deps/pear_dir
 
 install :
-	@cp deps/sickle deps/flash2 fluidigm2purc crunch_clusters /usr/local/bin
+	@cp deps/sickle deps/flash2 fluidigm2purc crunch_clusters pacbio_err.py /usr/local/bin
 	@#export PATH=$PATH:$(pwd)
 	@#CURDIR=$(pwd)
 	@#printf "\nTo keep these scripts in your \044PATH, add\n\nexport PATH=\044PATH:${CURDIR}\n\nto your .bash_profile.\n\n"
@@ -43,4 +43,5 @@ test :
 	@flash2 --help
 	@fluidigm2purc -h
 	@crunch_clusters -h
+	@pacbio_err.py -h
 	@cd tests; fluidigm2purc -f TEST
