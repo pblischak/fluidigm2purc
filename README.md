@@ -2,12 +2,12 @@
 
 ## **Fluidigm2PURC**: automated processing and haplotype inference for double-barcoded PCR amplicons
 
-**Fluidigm2PURC Preprint:**
+**Fluidigm2PURC Citation:**
 
 Blischak, P. D., M. Latvis, D. F. Morales-Briones, J. C. Johnson, V. S. Di Stilio,
 A. D. Wolfe, and D. C. Tank. 2018. Fluidigm2PURC: automated processing and
-haplotype inference for double-barcoded PCR amplicons. bioRxiv doi:
-[10.1101/242677](https://doi.org/10.1101/242677).
+haplotype inference for double-barcoded PCR amplicons. *Applications in Plant Sciences* 6:e1156.
+[[link]](https://doi.org/10.1002/aps3.1156)
 
 ## [**Read the Docs**](http://fluidigm2purc.readthedocs.io/en/latest/?badge=latest)
 
