@@ -1,3 +1,6 @@
+0.2.1
+  Sorting combined clusters so that the largest cluster is returned.
+
 0.2.0
   Adding script to calculate error in FASTQ files from PacBio.
 

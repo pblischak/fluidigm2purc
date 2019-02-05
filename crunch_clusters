@@ -24,7 +24,7 @@ except ImportError:
 try:
     vnum = open("VERSION.txt", 'r').readline().strip()
 except:
-    vnum = "0.2.0"
+    vnum = "0.2.1"
 __version__ = "This is Fluidigm2PURC v"+vnum+"."
 
 __header__ = """\
@@ -205,7 +205,10 @@ def combine_matching_seqs(clusts, fasta_idx, taxon):
                 already_matched.append(clusts[j])
             else:
                 pass
-        matches_dict[taxon + "_" + header_one + "_size=" + str(total_size) + "_"] = matches
+        match_sizes = [int(i.split('_')[-2].split("=")[1]) for i in matches]
+        sorted_matches = [m for _,m in sorted(zip(match_sizes,matches), reverse=True)]
+        #print(matches,sorted_matches, sep='\n')
+        matches_dict[taxon + "_" + header_one + "_size=" + str(total_size) + "_"] = sorted_matches
     return matches_dict
 
 def crunch_clusters(fasta, orig_fasta, species, error, locus, cutoff, haploid=False, unique=False):
